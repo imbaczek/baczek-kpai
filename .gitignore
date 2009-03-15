@@ -1,0 +1,15 @@
+Debug/
+Release/
+_UpgradeReport_Files/
+UpgradeReport*
+UpgradeLog*
+*.ncb
+*.suo
+*.user
+*~
+*.dll
+*.ilk
+*.exp
+*.lib
+*.pdb
+.*.swp

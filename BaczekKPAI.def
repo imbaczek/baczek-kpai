@@ -1,0 +1,11 @@
+; TestAI.def : Declares the module parameters for the DLL.
+
+LIBRARY      "BaczekKPAI"
+DESCRIPTION  'Baczek\'s Kernel Panic AI'
+
+EXPORTS
+    ; Explicit exports can go here
+ 	init	@1
+ 	handleEvent			@2
+	release			@3
+	getLevelOfSupportFor			@4
