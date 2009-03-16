@@ -18,6 +18,8 @@
 
 
 #include "GUI/StatusFrame.h"
+#include "InfluenceMap.h"
+
 
 const char AI_NAME[]="Baczek KP AI";
 
@@ -80,6 +82,8 @@ public:
 	MapInfo map;
 
 	vector<float3> geovents;
+
+	InfluenceMap *influence;
 
 #ifdef USE_STATUS_WINDOW
 	MyFrame *frame;

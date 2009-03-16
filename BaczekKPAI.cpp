@@ -20,6 +20,7 @@
 #include "BaczekKPAI.h"
 #include "GUI/StatusFrame.h"
 #include "Log.h"
+#include "InfluenceMap.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -34,13 +35,15 @@ namespace std {
 BaczekKPAI::BaczekKPAI()
 {
 	log = 0;
+	influence = 0;
 }
 
 BaczekKPAI::~BaczekKPAI()
 {
-	log->info() << "Shutting down.\n";
+	log->info() << "Shutting down." << endl;
 	log->close();
 	delete log; log = 0;
+	delete influence; influence = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,6 +56,7 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	callback->GetCheatInterface()->EnableCheatEvents(true);
 
 	datadir = aiexport_getDataDir(true, "");
+	std::string dd(datadir);
 	callback->GetAICallback()->SendTextMsg("AI data directory:", 0);
 	callback->GetAICallback()->SendTextMsg(datadir, 0);
 
@@ -67,6 +71,9 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	map.squareSize = SQUARE_SIZE;
 
 	FindGeovents();
+
+	InfluenceMap::WriteDefaultJSONConfig(dd+"influence.json");
+	influence = new InfluenceMap(dd+"influence.json");
 	
 #ifdef USE_STATUS_WINDOW
 	int argc = 1;
@@ -155,23 +162,8 @@ void BaczekKPAI::Update()
 {
 	int frame=callback->GetAICallback()->GetCurrentFrame();
 
-	log->info() << "new frame: " << frame << endl;
-
-	if (frame == 1) {
-		FindGeovents();
-	}
-
 	if ((frame % 5) == 0) {
 		DumpStatus();
-	}
-
-	if((frame % 60) == 0){
-		char c[200];
-		SNPRINTF(c, 200, "Friendly %i Enemy %i", myUnits.size(),
-				enemies.size());
-		callback->GetAICallback()->SendTextMsg(c, 0);
-		callback->GetAICallback()->SendTextMsg(
-				"NullLegacyCppAI: another 60 frames passed!", 0);
 	}
 }
 
