@@ -13,3 +13,6 @@ UpgradeLog*
 *.lib
 *.pdb
 .*.swp
+waf-*-*/
+output/
+.lock-*
