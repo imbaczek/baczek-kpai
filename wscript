@@ -4,7 +4,7 @@ import os.path
 
 srcdir = '.'
 blddir = 'output'
-copydir = os.path.join(srcdir, 'CopiedSpringFiles')
+copydir = os.path.abspath(os.path.join(srcdir, 'CopiedSpringFiles'))
 
 def set_options(opt):
     opt.add_option('--spring-dir', default='../../../',
@@ -40,11 +40,17 @@ def configure(conf):
     conf.env.append_value('CCFLAGS', '-g')
     conf.env.append_value('CXXFLAGS', '-g')
     
+
+
+import Task
+    
+#class CopySpringFiles
+
 def build(bld):
     import glob, os.path, Options
     # waf 1.5.3 cannot compile files outside of srcdir, need to copy needed
     # stuff
-    def copy_spring_files():
+    def copy_spring_files(self):
         print 'copying spring files...'
         import shutil
         springdir = bld.env['spring_dir']
@@ -58,6 +64,7 @@ def build(bld):
         if not os.path.isdir(copydir):
             os.makedirs(copydir)
         for f in tocopy:
+            print f
             shutil.copy2(f, copydir)
     def clean_spring_files():
         print 'cleaning spring files...'
@@ -65,12 +72,17 @@ def build(bld):
         if os.path.isdir(copydir):
             shutil.rmtree(copydir)
         
-    if Options.commands['clean']:
-        clean_spring_files()
-    else:
-        copy_spring_files()
+    def copy_task(self):
+        if Options.commands['clean']:
+            clean_spring_files()
+        else:
+            copy_spring_files()
 
-    skirmishai = bld.new_task_gen('cxx', 'shlib')
+    copyfiles = bld.new_task_gen(name='copyspring',
+            rule=copy_task,
+            before='compile_skirmishai')
+    #return
+    skirmishai = bld.new_task_gen(feature='cxx shlib', name='compile_skirmishai')
     skirmishai.defines = 'BUILDING_SKIRMISH_AI BUILDING_AI'
     skirmishai.source = \
             glob.glob(os.path.join(srcdir, '*.cpp')) +\
