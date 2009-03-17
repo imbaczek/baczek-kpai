@@ -75,6 +75,7 @@ def build(bld):
     skirmishai.source = \
             glob.glob(os.path.join(srcdir, '*.cpp')) +\
             glob.glob(os.path.join(srcdir, 'GUI', '*.cpp')) +\
+            glob.glob(os.path.join(srcdir, 'json_spirit', '*.cpp')) +\
             glob.glob(os.path.join(copydir, '*.cpp')) +\
             glob.glob(os.path.join(copydir, '*.c'))
     skirmishai.includes = ['.'] + [os.path.join(bld.env['spring_dir'], x)

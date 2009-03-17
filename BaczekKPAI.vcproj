@@ -229,6 +229,10 @@
 				RelativePath=".\BaczekKPAI.def"
 				>
 			</File>
+			<File
+				RelativePath=".\InfluenceMap.cpp"
+				>
+			</File>
 			<Filter
 				Name="GUI"
 				>
@@ -277,6 +281,18 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="json_spirit"
+				>
+				<File
+					RelativePath=".\json_spirit\json_spirit_reader.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\json_spirit\json_spirit_writer.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -284,6 +300,10 @@
 			>
 			<File
 				RelativePath=".\BaczekKPAI.h"
+				>
+			</File>
+			<File
+				RelativePath=".\InfluenceMap.h"
 				>
 			</File>
 			<File
@@ -411,6 +431,30 @@
 				</File>
 				<File
 					RelativePath="..\..\Wrappers\LegacyCpp\Event\AIWeaponFiredEvent.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="json_spirit"
+				>
+				<File
+					RelativePath=".\json_spirit\json_spirit.h"
+					>
+				</File>
+				<File
+					RelativePath=".\json_spirit\json_spirit_reader.h"
+					>
+				</File>
+				<File
+					RelativePath=".\json_spirit\json_spirit_utils.h"
+					>
+				</File>
+				<File
+					RelativePath=".\json_spirit\json_spirit_value.h"
+					>
+				</File>
+				<File
+					RelativePath=".\json_spirit\json_spirit_writer.h"
 					>
 				</File>
 			</Filter>
