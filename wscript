@@ -25,7 +25,6 @@ def configure(conf):
     if Options.platform=='win32':
         conf.env.append_value('shlib_LINKFLAGS', ['-Wl,--kill-at'])
         conf.env['shlib_PATTERN'] = '%s.dll'
-        #conf.env.append_value('LINK_CXX', '-Wl,--kill-at')
     # global conf options
     from Options import options
     conf.env['spring_dir'] = options.spring_dir
