@@ -2,9 +2,11 @@
 
 import os.path
 
+VERSION='0.0.1'
+APPNAME='BaczekKPAI'
 srcdir = '.'
 blddir = 'output'
-copydir = os.path.abspath(os.path.join(srcdir, 'CopiedSpringFiles'))
+
 
 def set_options(opt):
     opt.add_option('--spring-dir', default='../../../',
@@ -15,9 +17,8 @@ def set_options(opt):
 
 def configure(conf):
     # tool checks
-    conf.check_tool('gcc')
-    conf.check_tool('g++')
-    conf.find_gxx()
+    conf.check_tool('gxx')
+    #conf.find_gxx()
     # global compiler flags
     conf.env.append_value('CCFLAGS',  '-Wall')
     conf.env.append_value('CXXFLAGS',  '-Wall')
@@ -27,8 +28,8 @@ def configure(conf):
         conf.env['shlib_PATTERN'] = '%s.dll'
     # global conf options
     from Options import options
-    conf.env['spring_dir'] = options.spring_dir
-    conf.env['boost_dir'] = options.boost_dir
+    conf.env['spring_dir'] = os.path.abspath(options.spring_dir)
+    conf.env['boost_dir'] = os.path.abspath(options.boost_dir)
 
     # more compiler flags
     env2 = conf.env.copy()
@@ -41,18 +42,9 @@ def configure(conf):
     conf.env.append_value('CXXFLAGS', '-g')
     
 
-
-import Task
-    
-#class CopySpringFiles
-
 def build(bld):
-    import glob, os.path, Options
-    # waf 1.5.3 cannot compile files outside of srcdir, need to copy needed
-    # stuff
-    def copy_spring_files(self):
-        print 'copying spring files...'
-        import shutil
+    import glob, os.path
+    def get_spring_files():
         springdir = bld.env['spring_dir']
         tocopy = \
             glob.glob(os.path.join(springdir, 'AI', 'Wrappers', 'CUtils', '*.cpp')) +\
@@ -61,38 +53,31 @@ def build(bld):
             [os.path.join(springdir, 'rts', 'System', 'float3.cpp'),
                 os.path.join(springdir, 'rts', 'Game', 'GameVersion.cpp'),
                 os.path.join(springdir, 'rts', 'Sim', 'Misc', 'DamageArray.cpp')]
-        if not os.path.isdir(copydir):
-            os.makedirs(copydir)
-        for f in tocopy:
-            print f
-            shutil.copy2(f, copydir)
-    def clean_spring_files():
-        print 'cleaning spring files...'
-        import shutil
-        if os.path.isdir(copydir):
-            shutil.rmtree(copydir)
-        
-    def copy_task(self):
-        if Options.commands['clean']:
-            clean_spring_files()
-        else:
-            copy_spring_files()
+        return tocopy
 
-    copyfiles = bld.new_task_gen(name='copyspring',
-            rule=copy_task,
-            before='compile_skirmishai')
-    #return
-    skirmishai = bld.new_task_gen(feature='cxx shlib', name='compile_skirmishai')
-    skirmishai.defines = 'BUILDING_SKIRMISH_AI BUILDING_AI'
-    skirmishai.source = \
-            glob.glob(os.path.join(srcdir, '*.cpp')) +\
-            glob.glob(os.path.join(srcdir, 'GUI', '*.cpp')) +\
-            glob.glob(os.path.join(srcdir, 'json_spirit', '*.cpp')) +\
-            glob.glob(os.path.join(copydir, '*.cpp')) +\
-            glob.glob(os.path.join(copydir, '*.c'))
-    skirmishai.includes = ['.'] + [os.path.join(bld.env['spring_dir'], x)
+    spring_files = get_spring_files()
+    for f in spring_files:
+        bld.new_task_gen(
+                name='copy',
+                before='cxx',
+                target=os.path.split(f)[-1],
+                rule='cp -p %s ${TGT}'%f,
+                always=True,
+                on_results=True,
+        )
+    skirmishai = bld.new_task_gen(
+            features='cxx cshlib',
+            includes=['.']+ [os.path.join(bld.env['spring_dir'], x)
                 for x in ('rts', 'rts/System', 'AI/Wrappers',
                     'AI/Wrappers/CUtils', 'AI/Wrappers/LegacyCPP',
                     'rts/Sim/Misc', 'rts/Game')] \
-            + [bld.env['boost_dir']]
-    skirmishai.target = 'SkirmishAI'
+                + [bld.env['boost_dir']],
+            source= \
+                glob.glob(os.path.join(srcdir, '*.cpp')) +\
+                glob.glob(os.path.join(srcdir, 'GUI', '*.cpp')) +\
+                glob.glob(os.path.join(srcdir, 'json_spirit', '*.cpp')) +\
+                [os.path.split(f)[-1]
+                        for f in spring_files],
+            defines='BUILDING_SKIRMISH_AI BUILDING_AI',
+            target='SkirmishAI',
+    )
