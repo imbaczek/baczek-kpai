@@ -43,20 +43,23 @@ PythonScripting::PythonScripting(std::string datadir)
 	dict main_dict = extract<dict>(main_namespace);
 	object file_func = main_dict["__builtins__"].attr("file");
 
-	ailog->info() << "setting sys.stdout..." << std::endl;
+	ailog->info() << "py: setting sys.stdout..." << std::endl;
 	object file_out = file_func(str(datadir+"/pyout.txt"), "w");
 	sys.attr("stdout") = file_out;
 
-	ailog->info() << "setting sys.stderr..." << std::endl;
+	ailog->info() << "py: setting sys.stderr..." << std::endl;
 	object file_err = file_func(str(datadir+"/pyerr.txt"), "w");
 	sys.attr("stderr") = file_err;
 
-	ailog->info() << "loading ai module..." << std::endl;
 	init = import("pykpai");
 
-	ailog->info() << "loading py/init.py..." << std::endl;
+	std::string init_py = datadir+"/py/init.py";
+	boost::filesystem::path init_path(init_py);
 	try {
-		exec_file(str(datadir+"/py/init.py"), main_namespace, main_namespace);
+		if (boost::filesystem::is_regular(init_path))
+			exec_file(str(), main_namespace, main_namespace);
+		else
+			ailog->error() << init_py << " doesn't exist" << std::endl;
 	} catch (error_already_set &e) {
 		PyErr_Print();
 	}
