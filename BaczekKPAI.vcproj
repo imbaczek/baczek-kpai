@@ -49,10 +49,10 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\..\rts&quot;;&quot;$(ProjectDir)..\..\Wrappers&quot;;&quot;$(ProjectDir)..\..\..\rts\System&quot;;&quot;$(WXWIN)\include&quot;;&quot;$(WXWIN)\include\msvc&quot;;&quot;$(BOOST_ROOT)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\..\rts&quot;;&quot;$(ProjectDir)..\..\Wrappers&quot;;&quot;$(ProjectDir)..\..\..\rts\System&quot;;&quot;$(WXWIN)\include&quot;;&quot;$(WXWIN)\include\msvc&quot;;&quot;$(BOOST_ROOT)&quot;;&quot;$(PYTHON_DIR)\include&quot;"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_USRDLL;TESTAI_EXPORTS;BUILDING_SKIRMISH_AI;BUILDING_AI;WINVER=0x0400;__WXMSW__;WXUSINGDLL;wxUSE_GUI=1;wxUSE_GLCANVAS=0;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_UNICODE"
 				StringPooling="true"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				FloatingPointModel="2"
 				PrecompiledHeaderFile=".\Release/BaczekKPAI.pch"
@@ -145,10 +145,10 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\..\rts&quot;;&quot;$(ProjectDir)..\..\Wrappers&quot;;&quot;$(ProjectDir)..\..\..\rts\System&quot;;&quot;$(WXWIN)\include&quot;;&quot;$(WXWIN)\include\msvc&quot;;&quot;$(BOOST_ROOT)&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\..\rts&quot;;&quot;$(ProjectDir)..\..\Wrappers&quot;;&quot;$(ProjectDir)..\..\..\rts\System&quot;;&quot;$(WXWIN)\include&quot;;&quot;$(WXWIN)\include\msvc&quot;;&quot;$(BOOST_ROOT)&quot;;&quot;$(PYTHON_DIR)\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;TESTAI_EXPORTS;BUILDING_SKIRMISH_AI;BUILDING_AI;WINVER=0x0400;__WXMSW__;WXUSINGDLL;wxUSE_GUI=1;__WXDEBUG__;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_UNICODE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				FloatingPointModel="2"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\Debug/BaczekKPAI.pch"
@@ -179,10 +179,11 @@
 				Version="0.1"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;$(WXWIN)\lib\vc_dll&quot;"
+				AdditionalLibraryDirectories="&quot;$(WXWIN)\lib\vc_dll&quot;;&quot;$(PYTHON_DIR)\libs&quot;;&quot;$(BOOST_ROOT)\lib&quot;"
 				ModuleDefinitionFile="BaczekKPAI.def"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/BaczekKPAI.pdb"
+				SubSystem="0"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary=".\Debug/BaczekKPAI.lib"
@@ -231,6 +232,10 @@
 			</File>
 			<File
 				RelativePath=".\InfluenceMap.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\PythonScripting.cpp"
 				>
 			</File>
 			<Filter
@@ -293,6 +298,10 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="Python"
+				>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -308,6 +317,10 @@
 			</File>
 			<File
 				RelativePath=".\Log.h"
+				>
+			</File>
+			<File
+				RelativePath=".\PythonScripting.h"
 				>
 			</File>
 			<File

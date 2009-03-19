@@ -21,7 +21,7 @@
 #include "GUI/StatusFrame.h"
 #include "Log.h"
 #include "InfluenceMap.h"
-
+#include "PythonScripting.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -30,21 +30,29 @@
 
 BaczekKPAI::BaczekKPAI()
 {
-	log = 0;
+	ailog = 0;
 	influence = 0;
+	python = 0;
 }
 
 BaczekKPAI::~BaczekKPAI()
 {
-	log->info() << "Shutting down." << endl;
-	log->close();
-	delete log; log = 0;
+	ailog->info() << "Shutting down." << endl;
+	ailog->close();
+
+	// order of deletion matters
+	delete python; python = 0;
 	delete influence; influence = 0;
+
+	// global ailog deleted last
+	delete ailog; ailog = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // AI Event functions
 ////////////////////////////////////////////////////////////////////////////////
+
+Log* ailog = 0;
 
 void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 {
@@ -56,10 +64,10 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	callback->GetAICallback()->SendTextMsg("AI data directory:", 0);
 	callback->GetAICallback()->SendTextMsg(datadir, 0);
 
-	log = new Log(callback);
-	log->open(aiexport_getDataDir(true, "log.txt"));
-	log->info() << "Logging initialized.\n";
-	log->info() << "Baczek KP AI compiled on " __TIMESTAMP__ "\n";
+	ailog = new Log(callback);
+	ailog->open(aiexport_getDataDir(true, "log.txt"));
+	ailog->info() << "Logging initialized.\n";
+	ailog->info() << "Baczek KP AI compiled on " __TIMESTAMP__ "\n";
 
 	statusName = aiexport_getDataDir(true, "status.txt");
 	map.h = callback->GetAICallback()->GetMapHeight();
@@ -70,6 +78,8 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 
 	InfluenceMap::WriteDefaultJSONConfig(dd+"influence.json");
 	influence = new InfluenceMap(dd+"influence.json");
+
+	python = new PythonScripting(datadir);
 	
 #ifdef USE_STATUS_WINDOW
 	int argc = 1;
@@ -170,23 +180,23 @@ void BaczekKPAI::FindGeovents()
 {
 	int features[MAX_UNITS];
 	int num = callback->GetCheatInterface()->GetFeatures(features, MAX_UNITS);
-	log->info() << "found " << num << " features" << endl;
+	ailog->info() << "found " << num << " features" << endl;
 	for (int i = 0; i<num; ++i) {
 		int featId = features[i];
 		const FeatureDef* fd = callback->GetAICallback()->GetFeatureDef(featId);
 		assert(fd);
-		log->info() << "found feature " << fd->myName << "\n";
+		ailog->info() << "found feature " << fd->myName << "\n";
 		if (fd->myName != "geovent")
 			continue;
 		float3 fpos = callback->GetAICallback()->GetFeaturePos(featId);
-		log->info() << "found geovent at " << fpos.x << " " << fpos.z << "\n";
+		ailog->info() << "found geovent at " << fpos.x << " " << fpos.z << "\n";
 		// check if there isn't a geovent in close proximity (there are maps
 		// with duplicate geovents)
 		BOOST_FOREACH(float3 oldpos, geovents) {
 			if (oldpos.SqDistance2D(fpos) <= 64*64)
 				goto bad_geo;
 		}
-		log->info() << "adding geovent" << endl;
+		ailog->info() << "adding geovent" << endl;
 		geovents.push_back(fpos);
 bad_geo: ;
 	}

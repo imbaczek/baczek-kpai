@@ -28,3 +28,5 @@ public:
 	std::ofstream& error() { flush(); logfile << "ERROR:"; return logfile; }
 	std::ofstream& info() { flush(); logfile << "INFO:"; return logfile; }
 };
+
+extern Log* ailog;

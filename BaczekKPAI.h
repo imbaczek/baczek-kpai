@@ -19,7 +19,7 @@
 
 #include "GUI/StatusFrame.h"
 #include "InfluenceMap.h"
-
+#include "PythonScripting.h"
 
 const char AI_NAME[]="Baczek KP AI";
 
@@ -73,8 +73,6 @@ public:
 	const char *datadir;
 	const char *statusName;
 
-	Log* log;
-
 	struct MapInfo {
 		int w, h;
 		int squareSize;
@@ -84,6 +82,7 @@ public:
 	vector<float3> geovents;
 
 	InfluenceMap *influence;
+	PythonScripting *python;
 
 #ifdef USE_STATUS_WINDOW
 	MyFrame *frame;
