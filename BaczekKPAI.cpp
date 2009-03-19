@@ -171,6 +171,7 @@ void BaczekKPAI::Update()
 	if ((frame % 5) == 0) {
 		DumpStatus();
 	}
+	python->GameFrame(frame);
 }
 
 ///////////////////

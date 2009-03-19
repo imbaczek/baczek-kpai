@@ -22,4 +22,6 @@ private:
 public:
 	PythonScripting(std::string datadir);
 	~PythonScripting();
+
+	void GameFrame(int framenum);
 };
