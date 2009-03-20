@@ -11,24 +11,126 @@
 #	include "Python.h"
 #endif
 
+#include <strstream>
+
 #include <boost/python.hpp>
 #include <boost/filesystem.hpp>
 
+#include "BaczekKPAI.h"
 #include "Log.h"
 #include "PythonScripting.h"
 
 using namespace boost::python;
 
+/////////////////////////////////////
+// static members
+
+PythonScripting::ai_map_t PythonScripting::ai_map;
+
+void PythonScripting::RegisterAI(int teamId, BaczekKPAI *ai)
+{
+	ai_map.insert(PythonScripting::ai_map_t::value_type(teamId, ai));
+}
+
+void PythonScripting::UnregisterAI(int teamId)
+{
+	ai_map.erase(teamId);
+}
+
+BaczekKPAI* PythonScripting::GetAIForTeam(int teamId)
+{
+	PythonScripting::ai_map_t::iterator it = ai_map.find(teamId);
+	if (it != ai_map.end()) {
+		return it->second;
+	} else {
+		return 0;
+	}
+}
+
+/////////////////////////////////////
+// helpers
+
 static bool hasattr(boost::python::object obj, std::string const &attrName) {
      return PyObject_HasAttrString(obj.ptr(), attrName.c_str());
 }
 
-BOOST_PYTHON_MODULE(pykpai)
+/////////////////////////////////////
+// module
+
+namespace PythonFunctions
 {
+	void SendTextMessage(int teamId, std::string s)
+	{
+		BaczekKPAI* ai = PythonScripting::GetAIForTeam(teamId);
+		if (!ai)
+			return;
+		ai->callback->GetAICallback()->SendTextMsg(s.c_str(), 0);
+	}
+};
+
+static void IndexError() { PyErr_SetString(PyExc_IndexError, "Index out of range"); }
+
+template<typename T, typename V>
+struct std_item
+{
+    static V& get(T & x, int i)
+    {
+        if( i<0 ) i+=x.size();
+        if( i>=0 && i<x.size() ) return x[i];
+        IndexError();
+    }
+    static void set(T & x, int i, V const& v)
+    {
+        if( i<0 ) i+=x.size();
+        if( i>=0 && i<x.size() ) x[i]=v;
+        else IndexError();
+    }
+    static void del(T & x, int i)
+    {
+        if( i<0 ) i+=x.size();
+        if( i>=0 && i<x.size() ) x.erase(i);
+        else IndexError();
+    }
+    static void add(T const& x, V const& v)
+    {
+        x.push_back(v);
+    }
+};
+
+static std::string float3_repr(const float3& f3)
+{
+	std::ostringstream os;
+	os << "<float3 " << f3.x << ", " << f3.y << ", " << f3.z << ">";
+	return os.str();
 }
 
-PythonScripting::PythonScripting(std::string datadir)
+BOOST_PYTHON_MODULE(pykpai)
 {
+	class_<float3>("float3")
+		.def_readwrite("x", &float3::x)
+		.def_readwrite("y", &float3::y)
+		.def_readwrite("z", &float3::z)
+		.def("__repr__", &float3_repr)
+		.def("sq_distance2d", &float3::SqDistance2D)
+		;
+	class_<std::vector<float3> >("vector_float3")
+		.def("__len__", &std::vector<float3>::size)
+		.def("__getitem__", &std_item<std::vector<float3>, float3 >::get,
+			return_value_policy<copy_non_const_reference>())
+		.def("__setitem__", &std_item<std::vector<float3>, float3 >::set,
+			 with_custodian_and_ward<1,2>()) // to let container keep value
+		;
+	def("SendTextMessage", PythonFunctions::SendTextMessage);
+}
+
+
+/////////////////////////////////////
+// methods
+
+PythonScripting::PythonScripting(int teamId, std::string datadir)
+{
+	this->teamId = teamId;
+
 	PyImport_AppendInittab( "pykpai", &initpykpai );
 	Py_Initialize();
 
@@ -51,15 +153,9 @@ PythonScripting::PythonScripting(std::string datadir)
 	object file_err = file_func(str(datadir+"/pyerr.txt"), "w");
 	sys.attr("stderr") = file_err;
 
-	init = import("pykpai");
-
-	std::string init_py = datadir+"/py/init.py";
-	boost::filesystem::path init_path(init_py);
+	sys.attr("path").attr("append")(datadir+"/py");
 	try {
-		if (boost::filesystem::is_regular(init_path))
-			exec_file(str(init_path.string()), main_namespace, locals);
-		else
-			ailog->error() << init_py << " doesn't exist" << std::endl;
+		init = import("init");
 	} catch (error_already_set &) {
 		PyErr_Print();
 	}
@@ -74,11 +170,26 @@ void PythonScripting::GameFrame(int framenum)
 {
 	if (hasattr(init, "game_frame")) {
 		try {
-			init.attr("game_frame")(framenum);
+			init.attr("game_frame")(teamId, framenum);
 		} catch (error_already_set&) {
 			PyErr_Print();
 		}
 	} else {
 		ailog->info() << "py: game_frame(int) not defined" << std::endl;
+	}
+}
+
+void PythonScripting::DumpStatus(int framenum, const std::vector<float3>& geos,
+								 const std::vector<float3>& friendlies,
+								 const std::vector<float3>& enemies)
+{
+	if (hasattr(init, "dump_status")) {
+		try {
+			init.attr("dump_status")(teamId, framenum, geos, friendlies, enemies);
+		} catch (error_already_set&) {
+			PyErr_Print();
+		}
+	} else {
+		ailog->info() << "py: dump_status(int, int, list, list, list) not defined" << std::endl;
 	}
 }

@@ -79,7 +79,9 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	InfluenceMap::WriteDefaultJSONConfig(dd+"influence.json");
 	influence = new InfluenceMap(dd+"influence.json");
 
-	python = new PythonScripting(datadir);
+	PythonScripting::RegisterAI(team, this);
+	python = new PythonScripting(team, datadir);
+
 	
 #ifdef USE_STATUS_WINDOW
 	int argc = 1;
@@ -207,7 +209,8 @@ void BaczekKPAI::DumpStatus()
 {
 	ofstream statusFile(statusName);
 	// dump map size, frame number, etc
-	statusFile << "frame " << callback->GetAICallback()->GetCurrentFrame() << "\n"
+	int frame = callback->GetAICallback()->GetCurrentFrame();
+	statusFile << "frame " << frame << "\n"
 		<< "map " << map.w << " " << map.h << "\n";
 	// dump known geovents
 	statusFile << "geovents\n";
@@ -219,6 +222,8 @@ void BaczekKPAI::DumpStatus()
 	// dump known friendly units
 	statusFile << "units friendly\n";
 	int num = callback->GetAICallback()->GetFriendlyUnits(unitids);
+	std::vector<float3> friends;
+	friends.reserve(num);
 	for (int i = 0; i<num; ++i) {
 		int id = unitids[i];
 		float3 pos = callback->GetAICallback()->GetUnitPos(id);
@@ -226,10 +231,13 @@ void BaczekKPAI::DumpStatus()
 		assert(ud);
 		statusFile << "\t" << ud->name << " " << id << " " <<
 			pos.x << " " << pos.y << " " << pos.z << "\n";
+		friends.push_back(pos);
 	}
 	// dump known enemy units
 	statusFile << "units enemy\n";
 	num = callback->GetCheatInterface()->GetEnemyUnits(unitids);
+	std::vector<float3> enemies;
+	enemies.reserve(num);
 	for (int i = 0; i<num; ++i) {
 		int id = unitids[i];
 		float3 pos = callback->GetCheatInterface()->GetUnitPos(id);
@@ -237,10 +245,13 @@ void BaczekKPAI::DumpStatus()
 		assert(ud);
 		statusFile << "\t" << ud->name << " " << id << " " <<
 			pos.x << " " << pos.y << " " << pos.z << "\n";
+		enemies.push_back(pos);
 	}
 
 	// dump influence map
 	statusFile << "influence map\n";
 	// dump other stuff
 	statusFile.close();
+
+	python->DumpStatus(frame, geovents, friends, enemies);
 }

@@ -11,17 +11,32 @@
 #	include "Python.h"
 #endif
 
+#include <map>
 #include <boost/python.hpp>
 
 namespace bp = boost::python;
 
+class BaczekKPAI;
+
 class PythonScripting
 {
-private:
+protected:
 	boost::python::object init;
+	int teamId;
+
+	typedef std::map<int, BaczekKPAI*> ai_map_t;
+	static ai_map_t ai_map;
+
 public:
-	PythonScripting(std::string datadir);
+	PythonScripting(int teamId, std::string datadir);
 	~PythonScripting();
 
+	static void RegisterAI(int teamId, BaczekKPAI *);
+	static void UnregisterAI(int teamId);
+	static BaczekKPAI* GetAIForTeam(int teamId);
+
 	void GameFrame(int framenum);
+	void DumpStatus(int framenum, const std::vector<float3>& geos,
+					const std::vector<float3>& friendlies,
+					const std::vector<float3>& enemies);
 };
