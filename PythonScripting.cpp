@@ -57,10 +57,10 @@ PythonScripting::PythonScripting(std::string datadir)
 	boost::filesystem::path init_path(init_py);
 	try {
 		if (boost::filesystem::is_regular(init_path))
-			exec_file(str(), main_namespace, main_namespace);
+			exec_file(str(init_path.string()), main_namespace, locals);
 		else
 			ailog->error() << init_py << " doesn't exist" << std::endl;
-	} catch (error_already_set &e) {
+	} catch (error_already_set &) {
 		PyErr_Print();
 	}
 }
