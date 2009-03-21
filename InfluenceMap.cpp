@@ -1,6 +1,7 @@
 #include <fstream>
 #include <algorithm>
 #include <boost/foreach.hpp>
+#include <boost/filesystem.hpp>
 
 #include "json_spirit/json_spirit.h"
 
@@ -38,6 +39,9 @@ static InfluenceMap::UnitData read_unit_data(const std::string& name, const json
 
 bool InfluenceMap::ReadJSONConfig()
 {
+	if (!boost::filesystem::is_regular_file(boost::filesystem::path(configName))) {
+		return false;
+	}
 	std::ifstream is(configName.c_str());
 
 	json_spirit::Value value;
