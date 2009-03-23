@@ -77,7 +77,7 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	FindGeovents();
 
 	InfluenceMap::WriteDefaultJSONConfig(dd+"influence.json");
-	influence = new InfluenceMap(dd+"influence.json");
+	influence = new InfluenceMap(callback, dd+"influence.json");
 
 	PythonScripting::RegisterAI(team, this);
 	python = new PythonScripting(team, datadir);
@@ -169,9 +169,17 @@ int BaczekKPAI::HandleEvent(int msg,const void* data)
 void BaczekKPAI::Update()
 {
 	int frame=callback->GetAICallback()->GetCurrentFrame();
+	int unitids[MAX_UNITS];
+	int num = callback->GetAICallback()->GetFriendlyUnits(unitids);
+	std::vector<int> friends(unitids, unitids+num);
 
-	if ((frame % 5) == 0) {
+	num = callback->GetCheatInterface()->GetEnemyUnits(unitids);
+	std::vector<int> enemies(unitids, unitids+num);
+
+	if ((frame % 30) == 0) {
 		DumpStatus();
+	} else if ((frame % 30) == 15) {
+		influence->Update(friends, enemies);
 	}
 	python->GameFrame(frame);
 }

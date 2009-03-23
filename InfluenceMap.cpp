@@ -4,17 +4,102 @@
 
 #include "json_spirit/json_spirit.h"
 
+#include "ExternalAI/IGlobalAI.h"
+#include "ExternalAI/IAICheats.h"
+#include "ExternalAI/IAICallback.h"
+#include "ExternalAI/IGlobalAICallback.h"
+#include "Sim/Units/UnitDef.h"
+
+#include "Log.h"
 #include "InfluenceMap.h"
 
-InfluenceMap::InfluenceMap(std::string cfg) :
+InfluenceMap::InfluenceMap(IGlobalAICallback* cb, std::string cfg) :
 configName(cfg)
 {
+	this->callback = cb;
 	ReadJSONConfig();
+
+	maph = cb->GetAICallback()->GetMapHeight()/influence_size_divisor;
+	mapw = cb->GetAICallback()->GetMapWidth()/influence_size_divisor;
+	scalex = scaley = 1./SQUARE_SIZE/influence_size_divisor;
+
+	map.resize(mapw);
+	BOOST_FOREACH(std::vector<int>& r, map) {
+		r.resize(maph);
+	}
 }
 
 InfluenceMap::~InfluenceMap()
 {
 }
+
+/////////////////////////////////////////
+// influence map updating
+
+void InfluenceMap::Update(const std::vector<int>& friends,
+						  const std::vector<int>& enemies)
+{
+	for (int x=0; x<mapw; ++x) {
+		for (int y=0; y<maph; ++y) {
+			map[x][y] = 0;
+		}
+	}
+
+	BOOST_FOREACH(int uid, friends) {
+		// add friends to influence map
+		UpdateSingleUnit(uid, 1);
+	}
+
+	BOOST_FOREACH(int uid, enemies) {
+		// add enemies to influence map
+		UpdateSingleUnit(uid, -1);
+	}
+}
+
+void InfluenceMap::UpdateSingleUnit(int uid, int sign)
+{
+	// find customized data from JSON file
+	const UnitDef *ud = callback->GetCheatInterface()->GetUnitDef(uid);
+	assert(ud);
+	unit_value_map_t::iterator it = unit_map.find(ud->name);
+
+	if (it == unit_map.end()) {
+		// unit not found in influence map
+		ailog->error() << "unit data for influence map not found for "
+			<< ud->name << std::endl;
+		float3 pos = callback->GetCheatInterface()->GetUnitPos(uid);
+		int x = (int)(pos.x * scalex);
+		int y = (int)(pos.z * scaley);
+		map[x][y] += 1;
+	} else {
+		// unit found, add a value to influence map in given
+		// UnitData.radius, with min_value at the max distance
+		// and max_value at the center
+		const UnitData& data = it->second;
+		float3 pos = callback->GetCheatInterface()->GetUnitPos(uid);
+		int x = (int)(pos.x * scalex);
+		int y = (int)(pos.z * scaley);
+		int minx = std::max(0, x-data.radius);
+		int miny = std::max(0, y-data.radius);
+		int maxx = std::min(mapw-1, x+data.radius);
+		int maxy = std::min(maph-1, y+data.radius);
+		int rsq = data.radius*data.radius * scalex * scaley;
+
+		for (int px = minx; px<=maxx; ++px) {
+			for (int py = miny; py<=maxy; ++py) {
+				int distsq = (x-px)*(x-px) + (y-py)*(y-py);
+				if (distsq > rsq)
+					continue;
+				float k = (float)distsq/rsq;
+				map[px][py] = (int)((1-k)*data.max_value + k*data.min_value)*sign;
+			}
+		}
+	}
+}
+
+
+/////////////////////////////////////////
+// JSON parsing
 
 static InfluenceMap::UnitData read_unit_data(const std::string& name, const json_spirit::Object& obj)
 {
