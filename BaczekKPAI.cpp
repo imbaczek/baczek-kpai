@@ -238,8 +238,17 @@ void BaczekKPAI::DumpStatus()
 		float3 pos = callback->GetAICallback()->GetUnitPos(id);
 		const UnitDef* ud = callback->GetAICallback()->GetUnitDef(id);
 		assert(ud);
-		statusFile << "\t" << ud->name << " " << id << " " <<
-			pos.x << " " << pos.y << " " << pos.z << "\n";
+		// print owner
+		char *ownerstr;
+		if (callback->GetAICallback()->GetUnitTeam(id)
+				== callback->GetAICallback()->GetMyTeam()) {
+			ownerstr = "mine";
+		} else {
+			ownerstr = "allied";
+		}
+		statusFile << "\t" << ud->name << " " << id << " "
+			<< pos.x << " " << pos.y << " " << pos.z
+			<< " " << ownerstr << "\n";
 		friends.push_back(pos);
 	}
 	// dump known enemy units
