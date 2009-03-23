@@ -84,7 +84,7 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	if (!fs::is_regular_file(fs::path(influence_conf))) {
 		InfluenceMap::WriteDefaultJSONConfig(influence_conf);
 	}
-	influence = new InfluenceMap(influence_conf);
+	influence = new InfluenceMap(callback, dd+"influence.json");
 
 	PythonScripting::RegisterAI(team, this);
 	python = new PythonScripting(team, datadir);
@@ -176,9 +176,17 @@ int BaczekKPAI::HandleEvent(int msg,const void* data)
 void BaczekKPAI::Update()
 {
 	int frame=callback->GetAICallback()->GetCurrentFrame();
+	int unitids[MAX_UNITS];
+	int num = callback->GetAICallback()->GetFriendlyUnits(unitids);
+	std::vector<int> friends(unitids, unitids+num);
 
-	if ((frame % 5) == 0) {
+	num = callback->GetCheatInterface()->GetEnemyUnits(unitids);
+	std::vector<int> enemies(unitids, unitids+num);
+
+	if ((frame % 30) == 0) {
 		DumpStatus();
+	} else if ((frame % 30) == 15) {
+		influence->Update(friends, enemies);
 	}
 	python->GameFrame(frame);
 }
@@ -214,7 +222,8 @@ bad_geo: ;
 
 void BaczekKPAI::DumpStatus()
 {
-	ofstream statusFile(statusName);
+	std::string tmpName = std::string(statusName)+".tmp";
+	ofstream statusFile(tmpName.c_str());
 	// dump map size, frame number, etc
 	int frame = callback->GetAICallback()->GetCurrentFrame();
 	statusFile << "frame " << frame << "\n"
@@ -236,8 +245,17 @@ void BaczekKPAI::DumpStatus()
 		float3 pos = callback->GetAICallback()->GetUnitPos(id);
 		const UnitDef* ud = callback->GetAICallback()->GetUnitDef(id);
 		assert(ud);
-		statusFile << "\t" << ud->name << " " << id << " " <<
-			pos.x << " " << pos.y << " " << pos.z << "\n";
+		// print owner
+		char *ownerstr;
+		if (callback->GetAICallback()->GetUnitTeam(id)
+				== callback->GetAICallback()->GetMyTeam()) {
+			ownerstr = "mine";
+		} else {
+			ownerstr = "allied";
+		}
+		statusFile << "\t" << ud->name << " " << id << " "
+			<< pos.x << " " << pos.y << " " << pos.z
+			<< " " << ownerstr << "\n";
 		friends.push_back(pos);
 	}
 	// dump known enemy units
@@ -257,8 +275,18 @@ void BaczekKPAI::DumpStatus()
 
 	// dump influence map
 	statusFile << "influence map\n";
+	statusFile << influence->mapw << " " << influence->maph << "\n";
+	for (int y=0; y<influence->maph; ++y) {
+		for (int x=0; x<influence->mapw; ++x) {
+			statusFile << influence->map[x][y] << " ";
+		}
+		statusFile << "\n";
+	}
 	// dump other stuff
 	statusFile.close();
+	
+	unlink(statusName);
+	rename(tmpName.c_str(), statusName);
 
 	python->DumpStatus(frame, geovents, friends, enemies);
 }
