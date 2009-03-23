@@ -215,7 +215,8 @@ bad_geo: ;
 
 void BaczekKPAI::DumpStatus()
 {
-	ofstream statusFile(statusName);
+	std::string tmpName = std::string(statusName)+".tmp";
+	ofstream statusFile(tmpName.c_str());
 	// dump map size, frame number, etc
 	int frame = callback->GetAICallback()->GetCurrentFrame();
 	statusFile << "frame " << frame << "\n"
@@ -258,8 +259,18 @@ void BaczekKPAI::DumpStatus()
 
 	// dump influence map
 	statusFile << "influence map\n";
+	statusFile << influence->mapw << " " << influence->maph << "\n";
+	for (int y=0; y<influence->maph; ++y) {
+		for (int x=0; x<influence->mapw; ++x) {
+			statusFile << influence->map[x][y] << " ";
+		}
+		statusFile << "\n";
+	}
 	// dump other stuff
 	statusFile.close();
+	
+	unlink(statusName);
+	rename(tmpName.c_str(), statusName);
 
 	python->DumpStatus(frame, geovents, friends, enemies);
 }
