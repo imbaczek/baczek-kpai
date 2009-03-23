@@ -15,5 +15,82 @@ classes:
 GoalStack - vector<Goal>/stack<Goal>
 IGoalProcessor <- Unit, UnitGroup, GlobalAI
         - ProcessGoalStack
-Goal - pos, type, flags, hierarchy?
+Goal - pos, priority, type, flags, params, hierarchy?
 Hierarchy = GoalStack[]
+
+Goal types:
+        Top level:
+        - BUILD_EXPANSION
+        - BUILD_WEAPON
+        - BUILD_UNIT
+        - ATTACK_AREA
+        - DEFEND_AREA
+
+        Group level:
+        - ATTACK_UNIT
+        - DEFEND_GROUP
+        - MOVE
+        - BUILD_EXPANSION
+        - BUILD_WEAPON
+        - BUILD_UNIT
+        - RETREAT
+
+        Unit level:
+        - ATTACK_UNIT
+        - DEFEND_UNIT
+        - MOVE
+        - BUILD_EXPANSION
+        - BUILD_WEAPON
+        - BUILD_UNIT
+        - RETREAT
+
+Scenario:
+        TL = Top Level
+        UG = Unit Group
+        UN = Unit
+
+
+TL.ProcessGoalStack():
+1. TL.goals.add(BUILD_EXPANSION)
+2. g = TL.GetTopGoal()
+3. TL.ProcessGoal(g)
+
+
+TL.ProcessGoal(g):
+1. case g of
+        BUILD_EXPANSION ->
+                spot = FindSpot()
+                if spot valid:
+                        UG.goals.add(BUILD_EXPANSION, spot)
+                        return true
+                else:
+                        return false
+        BUILD_UNIT unitDefName ->
+                UG.goals.add(BUILD_UNIT, unitDefName)
+                return true
+        BUILD_WEAPON ->
+                spot = FindSpot()
+                if spot valid:
+                        UG.goals.add(BUILD_WEAPON, spot)
+                        return true
+                else:
+                        return false
+        ATTACK_AREA spot ->
+                // how to find a group?
+                UG.goals.add(MOVE, spot, ATTACK)
+                return true
+        DEFEND_AREA spot ->
+                // how to find a group?
+                UG.goals.add(MOVE, spot, DEFEND)
+                return true
+
+
+UG.ProcessGoal(g):
+1. case g of
+        BUILD_EXPANSION ->
+        BUILD_UNIT ->
+        BUILD_WEAPON ->
+        ATTACK_AREA spot ->
+        ATTACK_UNIT unit ->
+        DEFEND_GROUP group ->
+        MOVE ->
