@@ -1,0 +1,19 @@
+- goal-oriented architecture
+- goal stacks
+        - per unit
+        - per group
+        - global
+
+classes:
+        Unit
+        UnitGroup
+        GlobalAI
+
+        GoalStack
+        Goal
+
+GoalStack - vector<Goal>/stack<Goal>
+IGoalProcessor <- Unit, UnitGroup, GlobalAI
+        - ProcessGoalStack
+Goal - pos, type, flags, hierarchy?
+Hierarchy = GoalStack[]
