@@ -82,7 +82,7 @@
 				OutputFile="$(OutDir)\SkirmishAI.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;$(WXWIN)\lib\vc_dll&quot;"
+				AdditionalLibraryDirectories="&quot;$(WXWIN)\lib\vc_dll&quot;;&quot;$(BOOST_ROOT)\lib&quot;;&quot;$(PYTHON_DIR)\libs&quot;"
 				ModuleDefinitionFile="BaczekKPAI.def"
 				GenerateDebugInformation="true"
 				RandomizedBaseAddress="1"
