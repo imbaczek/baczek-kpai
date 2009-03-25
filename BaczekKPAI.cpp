@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <cassert>
 #include <boost/foreach.hpp>
+#include <boost/filesystem.hpp>
 
 // AI interface/Spring includes
 #include "AIExport.h"
@@ -22,6 +23,9 @@
 #include "Log.h"
 #include "InfluenceMap.h"
 #include "PythonScripting.h"
+
+
+namespace fs = boost::filesystem;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -76,7 +80,10 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 
 	FindGeovents();
 
-	InfluenceMap::WriteDefaultJSONConfig(dd+"influence.json");
+	std::string influence_conf = dd+"influence.json";
+	if (!fs::is_regular_file(fs::path(influence_conf))) {
+		InfluenceMap::WriteDefaultJSONConfig(influence_conf);
+	}
 	influence = new InfluenceMap(callback, dd+"influence.json");
 
 	PythonScripting::RegisterAI(team, this);
