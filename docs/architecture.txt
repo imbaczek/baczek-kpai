@@ -16,6 +16,8 @@ GoalStack - vector<Goal>/stack<Goal>
 IGoalProcessor <- Unit, UnitGroup, GlobalAI
         - ProcessGoalStack
 Goal - pos, priority, type, flags, params, hierarchy?
+        parent/children?
+        removing of completed goals (when all subgoals are completed)
 Hierarchy = GoalStack[]
 
 Goal types:
