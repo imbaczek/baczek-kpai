@@ -84,7 +84,7 @@ void InfluenceMap::UpdateSingleUnit(int uid, int sign)
 		int miny = std::max(0, y-data.radius);
 		int maxx = std::min(mapw-1, x+data.radius);
 		int maxy = std::min(maph-1, y+data.radius);
-		int rsq = data.radius*data.radius * scalex * scaley;
+		int rsq = (int)(data.radius*data.radius * scalex * scaley);
 
 		for (int px = minx; px<=maxx; ++px) {
 			for (int py = miny; py<=maxy; ++py) {
