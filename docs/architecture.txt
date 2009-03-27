@@ -5,19 +5,44 @@
         - global
 
 classes:
-        Unit
-        UnitGroup
-        GlobalAI
+        GoalProcessor
+                Unit
+                UnitGroup
+                GlobalAI
 
         GoalStack
         Goal
 
-GoalStack - vector<Goal>/stack<Goal>
-IGoalProcessor <- Unit, UnitGroup, GlobalAI
+GoalProcessor <- Unit, UnitGroup, GlobalAI
         - ProcessGoalStack
-Goal - pos, priority, type, flags, params, hierarchy?
+        - members:
+                goalStack
+
+Architecture:
+        GoalID - int
+        GoalSet - map<GoalID, Goal>
+        GoalStack - vector<GoalID>
+
+Goal - GoalID, pos, priority, type, flags, params, hierarchy?
         parent/children?
+        chain?
         removing of completed goals (when all subgoals are completed)
+                -> boost.signal?
+
+        goal.completed() -> signal onCompleted()
+                goal processor -> take next goal
+                parent goal -> reduce refcount
+                unit -> clear command queue
+        goal.abort() -> signal onAbort()
+                goal processor -> take next goal
+                parent goal -> reduce refcount
+
+        goal.defer/reprioritize(newPriority) -> signal onStop()
+                needed?
+                goal processor -> take next goal
+        goal.started() -> signal onStart
+                needed?
+
 Hierarchy = GoalStack[]
 
 Goal types:
@@ -79,6 +104,7 @@ TL.ProcessGoal(g):
                         return false
         ATTACK_AREA spot ->
                 // how to find a group?
+                find closest combat unit group
                 UG.goals.add(MOVE, spot, ATTACK)
                 return true
         DEFEND_AREA spot ->
@@ -89,10 +115,106 @@ TL.ProcessGoal(g):
 
 UG.ProcessGoal(g):
 1. case g of
-        BUILD_EXPANSION ->
+        BUILD_EXPANSION spot ->
+                find builder closest to spot
+                builder.goals.add(BUILD_EXPANSION, spot)
+                return true
+        BUILD_WEAPON spot ->
+                find builder closest to spot
+                builder.goals.add(BUILD_EXPANSION, spot)
+                return true
         BUILD_UNIT ->
-        BUILD_WEAPON ->
         ATTACK_AREA spot ->
+                formation move near to spot
+                if most units completed the move:
+                        issue attack goals
+                return true
         ATTACK_UNIT unit ->
+                formation move near to spot
+                if most units completed the move:
+                        issue attack goal
+                return true
         DEFEND_GROUP group ->
         MOVE ->
+                formation move to spot
+
+
+
+UN.processGoal(g):
+        case g of
+        MOVE spot ->
+                if can't move: return false
+                give move command
+                return true
+        ATTACK_UNIT unit ->
+                if can't attack: return false
+                give attack command
+                return true
+        BUILD_EXPANSION ->
+        BUILD_WEAPON ->
+                if can't build: return false
+                give build command
+                return true
+        RETREAT ->
+                give move command to a random place near home base
+                return true
+
+
+
+FindSpot():
+        find spot in free_spots where ally influence is the greatest
+        return spot
+
+
+line formation:
+        ^^^^^^^^ <- front
+        ssHHHHss        H - heavy  s - spam  A - arty
+        ssssssss
+        AAAAAAAA
+
+        formation facing: towards enemy influence maximum in a given radius
+
+        update every X frames?
+        when to break formation?
+                under fire
+                enemy in range
+
+blob formation:
+        ^^^^^^^^^^
+           sHs
+          sHsHs
+           sHs
+
+           AAA
+
+
+
+Top level goal finder:
+        // expansion
+        while free_spots:
+                cycle add BUILD_EXPANSIONx4, BUILD_WEAPON
+        
+        // unit building
+        sum up enemy and allied units
+        check for most required counter unit
+        add BUILD_UNIT
+
+        // attack goals
+        find local maximums in enemy influence
+        find enemy bases
+        issue ATTACK_AREA goal for the point chosen by the current strategy
+
+        // defend goals
+        // starting construction of an expansion or weapon
+        // should cause a recomputation of DEFEND goals
+        find local maximums in enemy influence
+        points = {}
+        for each base:
+                m = local maximum of enemy influence closest to the base
+                if another base has m as its maximum
+                                and is closer:
+                        continue
+                else
+                        points[m] = base
+        for each point in points:
+                add DEFEND_AREA goal for point
