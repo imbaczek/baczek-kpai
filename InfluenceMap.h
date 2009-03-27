@@ -48,6 +48,9 @@ public:
 	bool ReadJSONConfig();
 	static void WriteDefaultJSONConfig(std::string configName);
 
+	int GetAtXY(int x, int y);
+
+
 	void Update(const std::vector<int>& friends,
 				const std::vector<int>& enemies);
 	void UpdateSingleUnit(int uid, int sign);

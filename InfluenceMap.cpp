@@ -35,6 +35,17 @@ InfluenceMap::~InfluenceMap()
 }
 
 /////////////////////////////////////////
+// queries
+
+int InfluenceMap::GetAtXY(int x, int y)
+{
+	x = x*scalex;
+	y = y*scaley;
+	return map[x][y];
+}
+
+
+/////////////////////////////////////////
 // influence map updating
 
 void InfluenceMap::Update(const std::vector<int>& friends,
