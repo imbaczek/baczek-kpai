@@ -231,11 +231,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Goal.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GoalProcessor.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\InfluenceMap.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\PythonScripting.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\TopLevelAI.cpp"
 				>
 			</File>
 			<Filter
@@ -312,6 +324,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Goal.h"
+				>
+			</File>
+			<File
+				RelativePath=".\GoalProcessor.h"
+				>
+			</File>
+			<File
 				RelativePath=".\InfluenceMap.h"
 				>
 			</File>
@@ -325,6 +345,10 @@
 			</File>
 			<File
 				RelativePath=".\GUI\StatusFrame.h"
+				>
+			</File>
+			<File
+				RelativePath=".\TopLevelAI.h"
 				>
 			</File>
 			<Filter
