@@ -61,6 +61,7 @@ void TopLevelAI::FindGoals()
 {
 	ailog->info() << "FindGoal()" << std::endl;
 	BOOST_FOREACH(float3 geo, ai->geovents) {
+		// TODO priority should be a function of distance and risk
 		Goal *g = Goal::GetGoal(Goal::CreateGoal(1, BUILD_EXPANSION));
 		g->params.push_back(geo);
 		AddGoal(g);
