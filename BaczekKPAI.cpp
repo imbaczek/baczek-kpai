@@ -61,12 +61,15 @@ Log* ailog = 0;
 void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 {
 	this->callback=callback;
-	callback->GetCheatInterface()->EnableCheatEvents(true);
+	cb = callback->GetAICallback();
+	cheatcb = callback->GetCheatInterface();
+
+	cheatcb->EnableCheatEvents(true);
 
 	datadir = aiexport_getDataDir(true, "");
 	std::string dd(datadir);
-	callback->GetAICallback()->SendTextMsg("AI data directory:", 0);
-	callback->GetAICallback()->SendTextMsg(datadir, 0);
+	cb->SendTextMsg("AI data directory:", 0);
+	cb->SendTextMsg(datadir, 0);
 
 	ailog = new Log(callback);
 	ailog->open(aiexport_getDataDir(true, "log.txt"));
@@ -74,8 +77,8 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	ailog->info() << "Baczek KP AI compiled on " __TIMESTAMP__ "\n";
 
 	statusName = aiexport_getDataDir(true, "status.txt");
-	map.h = callback->GetAICallback()->GetMapHeight();
-	map.w = callback->GetAICallback()->GetMapWidth();
+	map.h = cb->GetMapHeight();
+	map.w = cb->GetMapWidth();
 	map.squareSize = SQUARE_SIZE;
 
 	FindGeovents();
@@ -84,11 +87,12 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	if (!fs::is_regular_file(fs::path(influence_conf))) {
 		InfluenceMap::WriteDefaultJSONConfig(influence_conf);
 	}
-	influence = new InfluenceMap(callback, dd+"influence.json");
+	influence = new InfluenceMap(this, dd+"influence.json");
 
 	PythonScripting::RegisterAI(team, this);
 	python = new PythonScripting(team, datadir);
 
+	toplevel = new TopLevelAI(this);
 	
 #ifdef USE_STATUS_WINDOW
 	int argc = 1;
@@ -144,16 +148,17 @@ void BaczekKPAI::EnemyDamaged(int damaged, int attacker, float damage,
 
 void BaczekKPAI::EnemyDestroyed(int enemy,int attacker)
 {
+	cb->SendTextMsg("enemy destroyed", 0);
 	enemies.erase(enemy);
 }
 
 void BaczekKPAI::UnitIdle(int unit)
 {
-	const UnitDef* ud=callback->GetAICallback()->GetUnitDef(unit);
+	const UnitDef* ud=cb->GetUnitDef(unit);
 
 	static char c[200];
 	SNPRINTF(c, 200, "Idle unit %s", ud->humanName.c_str());
-	callback->GetAICallback()->SendTextMsg(c, 0);
+	cb->SendTextMsg(c, 0);
 }
 
 void BaczekKPAI::GotChatMsg(const char* msg,int player)
@@ -170,17 +175,18 @@ void BaczekKPAI::UnitMoveFailed(int unit)
 
 int BaczekKPAI::HandleEvent(int msg,const void* data)
 {
+	ailog->info() << "event " << msg << std::endl;
 	return 0; // signaling: OK
 }
 
 void BaczekKPAI::Update()
 {
-	int frame=callback->GetAICallback()->GetCurrentFrame();
+	int frame=cb->GetCurrentFrame();
 	int unitids[MAX_UNITS];
-	int num = callback->GetAICallback()->GetFriendlyUnits(unitids);
+	int num = cb->GetFriendlyUnits(unitids);
 	std::vector<int> friends(unitids, unitids+num);
 
-	num = callback->GetCheatInterface()->GetEnemyUnits(unitids);
+	num = cheatcb->GetEnemyUnits(unitids);
 	std::vector<int> enemies(unitids, unitids+num);
 
 	if ((frame % 30) == 0) {
@@ -189,6 +195,8 @@ void BaczekKPAI::Update()
 		influence->Update(friends, enemies);
 	}
 	python->GameFrame(frame);
+
+	toplevel->Update();
 }
 
 ///////////////////
@@ -197,16 +205,16 @@ void BaczekKPAI::Update()
 void BaczekKPAI::FindGeovents()
 {
 	int features[MAX_UNITS];
-	int num = callback->GetCheatInterface()->GetFeatures(features, MAX_UNITS);
+	int num = cheatcb->GetFeatures(features, MAX_UNITS);
 	ailog->info() << "found " << num << " features" << endl;
 	for (int i = 0; i<num; ++i) {
 		int featId = features[i];
-		const FeatureDef* fd = callback->GetAICallback()->GetFeatureDef(featId);
+		const FeatureDef* fd = cb->GetFeatureDef(featId);
 		assert(fd);
 		ailog->info() << "found feature " << fd->myName << "\n";
 		if (fd->myName != "geovent")
 			continue;
-		float3 fpos = callback->GetAICallback()->GetFeaturePos(featId);
+		float3 fpos = cb->GetFeaturePos(featId);
 		ailog->info() << "found geovent at " << fpos.x << " " << fpos.z << "\n";
 		// check if there isn't a geovent in close proximity (there are maps
 		// with duplicate geovents)
@@ -225,7 +233,7 @@ void BaczekKPAI::DumpStatus()
 	std::string tmpName = std::string(statusName)+".tmp";
 	ofstream statusFile(tmpName.c_str());
 	// dump map size, frame number, etc
-	int frame = callback->GetAICallback()->GetCurrentFrame();
+	int frame = cb->GetCurrentFrame();
 	statusFile << "frame " << frame << "\n"
 		<< "map " << map.w << " " << map.h << "\n";
 	// dump known geovents
@@ -237,18 +245,18 @@ void BaczekKPAI::DumpStatus()
 	int unitids[MAX_UNITS];
 	// dump known friendly units
 	statusFile << "units friendly\n";
-	int num = callback->GetAICallback()->GetFriendlyUnits(unitids);
+	int num = cb->GetFriendlyUnits(unitids);
 	std::vector<float3> friends;
 	friends.reserve(num);
 	for (int i = 0; i<num; ++i) {
 		int id = unitids[i];
-		float3 pos = callback->GetAICallback()->GetUnitPos(id);
-		const UnitDef* ud = callback->GetAICallback()->GetUnitDef(id);
+		float3 pos = cb->GetUnitPos(id);
+		const UnitDef* ud = cb->GetUnitDef(id);
 		assert(ud);
 		// print owner
 		char *ownerstr;
-		if (callback->GetAICallback()->GetUnitTeam(id)
-				== callback->GetAICallback()->GetMyTeam()) {
+		if (cb->GetUnitTeam(id)
+				== cb->GetMyTeam()) {
 			ownerstr = "mine";
 		} else {
 			ownerstr = "allied";
@@ -260,13 +268,13 @@ void BaczekKPAI::DumpStatus()
 	}
 	// dump known enemy units
 	statusFile << "units enemy\n";
-	num = callback->GetCheatInterface()->GetEnemyUnits(unitids);
+	num = cheatcb->GetEnemyUnits(unitids);
 	std::vector<float3> enemies;
 	enemies.reserve(num);
 	for (int i = 0; i<num; ++i) {
 		int id = unitids[i];
-		float3 pos = callback->GetCheatInterface()->GetUnitPos(id);
-		const UnitDef* ud = callback->GetCheatInterface()->GetUnitDef(id);
+		float3 pos = cheatcb->GetUnitPos(id);
+		const UnitDef* ud = cheatcb->GetUnitDef(id);
 		assert(ud);
 		statusFile << "\t" << ud->name << " " << id << " " <<
 			pos.x << " " << pos.y << " " << pos.z << "\n";

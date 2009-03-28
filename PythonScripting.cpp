@@ -64,7 +64,7 @@ namespace PythonFunctions
 		BaczekKPAI* ai = PythonScripting::GetAIForTeam(teamId);
 		if (!ai)
 			return;
-		ai->callback->GetAICallback()->SendTextMsg(s.c_str(), 0);
+		ai->cb->SendTextMsg(s.c_str(), 0);
 	}
 };
 

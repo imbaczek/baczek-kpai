@@ -5,9 +5,7 @@
 #if !defined(AFX_GroupAI_H__10718E36_5CDF_4CD4_8D90_F41311DD2694__INCLUDED_)
 #define AFX_GroupAI_H__10718E36_5CDF_4CD4_8D90_F41311DD2694__INCLUDED_
 
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 #include <map>
 #include <set>
@@ -15,11 +13,14 @@
 
 #include "ExternalAI/IGlobalAI.h"
 #include "ExternalAI/IAICallback.h"
+#include "ExternalAI/IAICheats.h"
 
 
 #include "GUI/StatusFrame.h"
 #include "InfluenceMap.h"
 #include "PythonScripting.h"
+#include "TopLevelAI.h"
+
 
 const char AI_NAME[]="Baczek KP AI";
 
@@ -64,6 +65,8 @@ public:
 	void FindGeovents();
 
 	IGlobalAICallback* callback;
+	IAICallback* cb;
+	IAICheats* cheatcb;
 
 	set<int> myUnits;
 	set<int> enemies;
@@ -83,6 +86,8 @@ public:
 
 	InfluenceMap *influence;
 	PythonScripting *python;
+
+	TopLevelAI* toplevel;
 
 #ifdef USE_STATUS_WINDOW
 	MyFrame *frame;

@@ -13,15 +13,16 @@
 
 #include "Log.h"
 #include "InfluenceMap.h"
+#include "BaczekKPAI.h"
 
-InfluenceMap::InfluenceMap(IGlobalAICallback* cb, std::string cfg) :
+InfluenceMap::InfluenceMap(BaczekKPAI* theai, std::string cfg) :
 configName(cfg)
 {
-	this->callback = cb;
+	this->ai = theai;
 	ReadJSONConfig();
 
-	maph = cb->GetAICallback()->GetMapHeight()/influence_size_divisor;
-	mapw = cb->GetAICallback()->GetMapWidth()/influence_size_divisor;
+	maph = ai->cb->GetMapHeight()/influence_size_divisor;
+	mapw = ai->cb->GetMapWidth()/influence_size_divisor;
 	scalex = scaley = 1./SQUARE_SIZE/influence_size_divisor;
 
 	map.resize(mapw);
@@ -71,7 +72,7 @@ void InfluenceMap::Update(const std::vector<int>& friends,
 void InfluenceMap::UpdateSingleUnit(int uid, int sign)
 {
 	// find customized data from JSON file
-	const UnitDef *ud = callback->GetCheatInterface()->GetUnitDef(uid);
+	const UnitDef *ud = ai->cheatcb->GetUnitDef(uid);
 	assert(ud);
 	unit_value_map_t::iterator it = unit_map.find(ud->name);
 
@@ -79,7 +80,7 @@ void InfluenceMap::UpdateSingleUnit(int uid, int sign)
 		// unit not found in influence map
 		ailog->error() << "unit data for influence map not found for "
 			<< ud->name << std::endl;
-		float3 pos = callback->GetCheatInterface()->GetUnitPos(uid);
+		float3 pos = ai->cheatcb->GetUnitPos(uid);
 		int x = (int)(pos.x * scalex);
 		int y = (int)(pos.z * scaley);
 		map[x][y] += 1;
@@ -88,7 +89,7 @@ void InfluenceMap::UpdateSingleUnit(int uid, int sign)
 		// UnitData.radius, with min_value at the max distance
 		// and max_value at the center
 		const UnitData& data = it->second;
-		float3 pos = callback->GetCheatInterface()->GetUnitPos(uid);
+		float3 pos = ai->cheatcb->GetUnitPos(uid);
 		int x = (int)(pos.x * scalex);
 		int y = (int)(pos.z * scaley);
 		int minx = std::max(0, x-data.radius);

@@ -4,15 +4,15 @@
 #include <string>
 #include <vector>
 
-#include "ExternalAI/IGlobalAICallback.h"
+class BaczekKPAI;
 
 class InfluenceMap
 {
 protected:
-	IGlobalAICallback* callback;
+	BaczekKPAI* ai;
 
 public:
-	InfluenceMap(IGlobalAICallback*, std::string);
+	InfluenceMap(BaczekKPAI* ai, std::string);
 	~InfluenceMap();
 
 	static const int influence_size_divisor = 8;
