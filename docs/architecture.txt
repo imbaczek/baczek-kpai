@@ -218,3 +218,38 @@ Top level goal finder:
                         points[m] = base
         for each point in points:
                 add DEFEND_AREA goal for point
+
+
+validate unit goals:
+        store enemy units
+        every X frames:
+                for each enemy unit:
+                        compare stored unit and current unit by
+                        * unitDefName
+                        * position (distance less than speed*X)
+                        if ids equal but criteria not met:
+                                fire death event for uid
+                                replace stored data
+                                fire create event for uid
+                        else if ids equal:
+                                replace stored data
+                        else if id disappeared:
+                                fire death event
+                        else if id is new:
+                                fire create event
+
+
+
+LONG-TERM PLANNER:
+------------------
+
+divide map into quadrants
+quadrant income = amount of expansions * W(expansion)
+                + amount of home bases * W(home base)
+quadrant force value = sum(unit * W(unit) for unit in units)
+
+take alternating turns at moving forces with given strategy
+strategies:
+        - dfs
+        - bfs
+        - attack closest base
