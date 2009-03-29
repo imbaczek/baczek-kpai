@@ -88,7 +88,7 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	if (!fs::is_regular_file(fs::path(influence_conf))) {
 		InfluenceMap::WriteDefaultJSONConfig(influence_conf);
 	}
-	influence = new InfluenceMap(this, dd+"influence.json");
+	influence = new InfluenceMap(this, influence_conf);
 
 	PythonScripting::RegisterAI(team, this);
 	python = new PythonScripting(team, datadir);
