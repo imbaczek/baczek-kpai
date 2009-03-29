@@ -143,6 +143,7 @@ public:
 	static int CreateGoal(int priority, Type type);
 
 	static Goal* GetGoal(int id);
+	static void RemoveGoal(Goal* g);
 };
 
 typedef boost::ptr_unordered_map<int, Goal> GoalSet;
@@ -175,4 +176,14 @@ inline Goal* Goal::GetGoal(int id)
 	if (it == g_goals.end())
 		return 0;
 	return it->second;
+}
+
+inline void Goal::RemoveGoal(Goal* g)
+{
+	if (!g->is_finished())
+		g->abort();
+	GoalSet::iterator it = g_goals.find(g->id);
+	if (it != g_goals.end()) {
+		g_goals.release(it);
+	}
 }
