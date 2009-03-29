@@ -69,7 +69,13 @@ public:
 	IAICheats* cheatcb;
 
 	set<int> myUnits;
-	set<int> enemies;
+	set<int> losEnemies;
+
+	// oldEnemies is used to find units that changed
+	vector<int> oldEnemies;
+	vector<int> allEnemies;
+	vector<int> friends;
+
 	virtual void Load(IGlobalAICallback* callback,std::ifstream *ifs){};
 	virtual void Save(std::ifstream *ifs){};
 

@@ -6,6 +6,7 @@
 #include <fstream>
 #include <stdlib.h>
 #include <cassert>
+#include <iterator>
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 
@@ -125,12 +126,12 @@ void BaczekKPAI::UnitDestroyed(int unit,int attacker)
 
 void BaczekKPAI::EnemyEnterLOS(int enemy)
 {
-	enemies.insert(enemy);
+	losEnemies.insert(enemy);
 }
 
 void BaczekKPAI::EnemyLeaveLOS(int enemy)
 {
-	enemies.erase(enemy);
+	losEnemies.erase(enemy);
 }
 
 void BaczekKPAI::EnemyEnterRadar(int enemy)
@@ -149,7 +150,8 @@ void BaczekKPAI::EnemyDamaged(int damaged, int attacker, float damage,
 void BaczekKPAI::EnemyDestroyed(int enemy,int attacker)
 {
 	cb->SendTextMsg("enemy destroyed", 0);
-	enemies.erase(enemy);
+	losEnemies.erase(enemy);
+	allEnemies.erase(find(allEnemies.begin(), allEnemies.end(), enemy));
 }
 
 void BaczekKPAI::UnitIdle(int unit)
@@ -184,15 +186,21 @@ void BaczekKPAI::Update()
 	int frame=cb->GetCurrentFrame();
 	int unitids[MAX_UNITS];
 	int num = cb->GetFriendlyUnits(unitids);
-	std::vector<int> friends(unitids, unitids+num);
+	friends.clear();
+	std::copy(unitids, unitids+num, inserter(friends, friends.begin()));
 
 	num = cheatcb->GetEnemyUnits(unitids);
-	std::vector<int> enemies(unitids, unitids+num);
+	oldEnemies.clear();
+	oldEnemies.resize(allEnemies.size());
+	std::copy(allEnemies.begin(), allEnemies.end(), oldEnemies.begin());
+	allEnemies.clear();
+	allEnemies.resize(num);
+	std::copy(unitids, unitids+num, allEnemies.begin());
 
 	if ((frame % 30) == 0) {
 		DumpStatus();
 	} else if ((frame % 30) == 15) {
-		influence->Update(friends, enemies);
+		influence->Update(friends, allEnemies);
 	}
 	python->GameFrame(frame);
 
