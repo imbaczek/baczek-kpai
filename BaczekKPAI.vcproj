@@ -250,6 +250,10 @@
 				RelativePath=".\TopLevelAI.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\UnitGroupAI.cpp"
+				>
+			</File>
 			<Filter
 				Name="GUI"
 				>
@@ -349,6 +353,10 @@
 			</File>
 			<File
 				RelativePath=".\TopLevelAI.h"
+				>
+			</File>
+			<File
+				RelativePath=".\UnitGroupAI.h"
 				>
 			</File>
 			<Filter
