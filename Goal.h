@@ -164,6 +164,5 @@ inline Goal* Goal::GetGoal(int id)
 	GoalSet::iterator it = g_goals.find(id);
 	if (it == g_goals.end())
 		return 0;
-	// FIXME is that safe?
 	return it->second;
 }
