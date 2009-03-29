@@ -1,10 +1,10 @@
+#include <iostream>
 #include <boost/thread.hpp>
 
 #include "Goal.h"
 
 GoalSet g_goals;
 int Goal::global_id = 0;
-
 
 
 int Goal::CreateGoal(int priority, Type type)

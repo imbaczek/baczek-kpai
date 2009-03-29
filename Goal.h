@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <queue>
+#include <iostream>
 #include <boost/ptr_container/ptr_unordered_map.hpp>
 #include <boost/signal.hpp>
 #include <boost/variant.hpp>
@@ -21,6 +22,15 @@ enum Type {
 	RETREAT,
 	NO_TYPE,
 };
+
+
+// needed for boost::variant here
+inline std::ostream &operator <<(std::ostream& os, float3 f)
+{
+	os << f.x << " " << f.y << " " << f.z;
+	return os;
+}
+
 
 
 class Goal
