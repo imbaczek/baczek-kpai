@@ -157,6 +157,7 @@ public:
 
 
 typedef std::priority_queue<int, std::vector<int>, goal_priority_less> GoalQueue;
+typedef std::vector<int> GoalStack;
 
 inline Goal* Goal::GetGoal(int id)
 {

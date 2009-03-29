@@ -27,20 +27,7 @@ void TopLevelAI::Update()
 		FindGoals();
 	}
 	if (frameNum % 30 == 0) {
-		// pop from goals while ProcessGoal returns false
-		// and goals are not empty
-		while(true) {
-			Goal* g = GetTopGoal();
-			if (g) {
-				if (ProcessGoal(g)) {
-					break;
-				} else {
-					goals.pop();
-				}
-			} else {
-				break;
-			}
-		}
+		ProcessGoalStack();
 	}
 }
 
