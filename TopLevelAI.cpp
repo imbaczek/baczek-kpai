@@ -50,7 +50,10 @@ void TopLevelAI::FindGoals()
 	BOOST_FOREACH(float3 geo, ai->geovents) {
 		// TODO priority should be a function of distance and risk
 		Goal *g = Goal::GetGoal(Goal::CreateGoal(1, BUILD_EXPANSION));
+		// check if there already is a goal with this position
+		// or if somebody built an expansion there
 		g->params.push_back(geo);
 		AddGoal(g);
 	}
 }
+
