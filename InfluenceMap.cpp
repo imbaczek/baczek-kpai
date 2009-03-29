@@ -104,7 +104,7 @@ void InfluenceMap::UpdateSingleUnit(int uid, int sign)
 				if (distsq > rsq)
 					continue;
 				float k = (float)distsq/rsq;
-				map[px][py] = (int)((1-k)*data.max_value + k*data.min_value)*sign;
+				map[px][py] += (int)((1-k)*data.max_value + k*data.min_value)*sign;
 			}
 		}
 	}
