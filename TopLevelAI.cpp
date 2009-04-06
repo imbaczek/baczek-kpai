@@ -14,10 +14,12 @@
 TopLevelAI::TopLevelAI(BaczekKPAI* theai)
 {
 	ai = theai;
+	builders = new UnitGroupAI(theai);
 }
 
 TopLevelAI::~TopLevelAI(void)
 {
+	delete builders; builders = 0;
 }
 
 void TopLevelAI::Update()
@@ -29,6 +31,12 @@ void TopLevelAI::Update()
 	}
 	if (frameNum % 30 == 0) {
 		ProcessGoalStack();
+	}
+
+	// update unit groups
+	builders->Update();
+	BOOST_FOREACH(UnitGroupAI& it, groups) {
+		it.Update();
 	}
 }
 
