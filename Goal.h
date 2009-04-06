@@ -113,6 +113,7 @@ public:
 	}
 
 	bool is_finished() { return (flags & FINISHED); }
+	bool is_executing() { return (flags & EXECUTING); }
 
 	void start() {
 		assert(!is_finished());
