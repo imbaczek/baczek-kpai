@@ -27,6 +27,7 @@ const char AI_NAME[]="Baczek KP AI";
 using namespace std;
 
 class Log;
+class Unit;
 
 class BaczekKPAI : public IGlobalAI  
 {
@@ -75,6 +76,9 @@ public:
 	vector<int> oldEnemies;
 	vector<int> allEnemies;
 	vector<int> friends;
+
+	// units
+	Unit* unitTable[MAX_UNITS];
 
 	virtual void Load(IGlobalAICallback* callback,std::ifstream *ifs){};
 	virtual void Save(std::ifstream *ifs){};

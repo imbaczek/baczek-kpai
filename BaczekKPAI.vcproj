@@ -251,6 +251,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Unit.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\UnitAI.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\UnitGroupAI.cpp"
 				>
 			</File>
@@ -353,6 +361,14 @@
 			</File>
 			<File
 				RelativePath=".\TopLevelAI.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Unit.h"
+				>
+			</File>
+			<File
+				RelativePath=".\UnitAI.h"
 				>
 			</File>
 			<File

@@ -20,6 +20,7 @@
 
 // project includes
 #include "BaczekKPAI.h"
+#include "Unit.h"
 #include "GUI/StatusFrame.h"
 #include "Log.h"
 #include "InfluenceMap.h"
@@ -38,6 +39,10 @@ BaczekKPAI::BaczekKPAI()
 	ailog = 0;
 	influence = 0;
 	python = 0;
+	toplevel = 0;
+
+	for (int i = 0; i<MAX_UNITS; ++i)
+		unitTable[i] = 0;
 }
 
 BaczekKPAI::~BaczekKPAI()
@@ -46,6 +51,8 @@ BaczekKPAI::~BaczekKPAI()
 	ailog->close();
 
 	// order of deletion matters
+	delete toplevel; toplevel = 0; // <- this should delete all child groups
+
 	delete python; python = 0;
 	delete influence; influence = 0;
 
@@ -112,16 +119,31 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 
 void BaczekKPAI::UnitCreated(int unit)
 {
+	ailog->info() << "unit created: " << unit << std::endl;
 	myUnits.insert(unit);
+
+	assert(!unitTable[unit]);
+	unitTable[unit] = new Unit(unit);
 }
 
 void BaczekKPAI::UnitFinished(int unit)
 {
+	ailog->info() << "unit finished: " << unit << std::endl;
+
+	assert(unitTable[unit]);
+	unitTable[unit]->OnComplete();
 }
 
 void BaczekKPAI::UnitDestroyed(int unit,int attacker)
 {
+	ailog->info() << "unit destroyed: " << unit << std::endl;
 	myUnits.erase(unit);
+
+	assert(unitTable[unit]);
+	Unit* tmp = unitTable[unit];
+	unitTable[unit] = 0;
+	tmp->OnDestroy(attacker);
+	delete tmp;
 }
 
 void BaczekKPAI::EnemyEnterLOS(int enemy)
