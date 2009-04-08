@@ -181,6 +181,7 @@ inline Goal* Goal::GetGoal(int id)
 
 inline void Goal::RemoveGoal(Goal* g)
 {
+	assert(g);
 	if (!g->is_finished())
 		g->abort();
 	GoalSet::iterator it = g_goals.find(g->id);
