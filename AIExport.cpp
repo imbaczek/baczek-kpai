@@ -72,7 +72,6 @@ EXPORT(int) init(int teamId, const struct SSkirmishAICallback* callback) {
 	}
 	teamId_callback[teamId] = callback;
 
-	// CAIGlobalAI is the Legacy C++ wrapper
 	myAIs[teamId] = new CAIGlobalAI(teamId, new BaczekKPAI());
 
 	// signal: everything went ok
@@ -115,7 +114,7 @@ EXPORT(int) handleEvent(int teamId, int topic, const void* data) {
 
 const char* aiexport_getDataDir(bool writeableAndCreate, const char* const relPath) {
 
-	char* absPath = firstCallback->Clb_DataDirs_allocatePath(firstTeamId, relPath, writeableAndCreate, writeableAndCreate, true);
+	char* absPath = firstCallback->Clb_DataDirs_allocatePath(firstTeamId, relPath, writeableAndCreate, writeableAndCreate, true, false);
 
 	if (absPath == NULL) {
 		absPath = NULL;
