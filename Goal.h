@@ -112,8 +112,8 @@ public:
 		return onSuspend.connect(f);
 	}
 
-	bool is_finished() { return (flags & FINISHED); }
-	bool is_executing() { return (flags & EXECUTING); }
+	bool is_finished() { return (bool)(flags & FINISHED); }
+	bool is_executing() { return (bool)(flags & EXECUTING); }
 
 	void start() {
 		assert(!is_finished());
