@@ -1,5 +1,7 @@
 #pragma once
 
+#include <boost/foreach.hpp>
+
 #include "Goal.h"
 
 class GoalProcessor
@@ -7,6 +9,13 @@ class GoalProcessor
 public:
 	GoalProcessor(void) {};
 	virtual ~GoalProcessor(void) {};
+
+	enum goal_process_t {
+		PROCESS_POP_CONTINUE,
+		PROCESS_POP_BREAK,
+		PROCESS_CONTINUE,
+		PROCESS_BREAK,
+	};
 
 	GoalStack goals;
 
@@ -32,21 +41,42 @@ public:
 	
 	virtual void ProcessGoalStack()
 	{
-		// pop from goals while ProcessGoal returns false
-		// and goals are not empty
-		while(true) {
-			Goal* g = GetTopGoal();
+		GoalStack todel;
+		todel.reserve(goals.size());
+
+		BOOST_REVERSE_FOREACH(int gid, goals) {
+			Goal* g = Goal::GetGoal(gid);
 			if (g) {
-				if (ProcessGoal(g)) {
-					break;
-				} else {
-					PopTopGoal();
+				goal_process_t gp = ProcessGoal(g);
+				switch (gp) {
+					case PROCESS_BREAK:
+						goto end;
+					case PROCESS_CONTINUE:
+						break;
+					case PROCESS_POP_BREAK:
+						todel.push_back(gid);
+						goto end;
+					case PROCESS_POP_CONTINUE:
+						todel.push_back(gid);
+						break;
 				}
-			} else {
-				break;
+			}
+		}
+end:
+		// slow?
+		BOOST_FOREACH(int gid, todel) {
+			GoalStack::iterator it = std::find(goals.begin(), goals.end(), gid);
+			if (it != goals.end()) {
+				Goal* g = Goal::GetGoal(*it);
+				assert(g);
+				g->abort();
+				goals.erase(it);
 			}
 		}
 	}
-	virtual bool ProcessGoal(Goal *g) = 0;
+
+	virtual void CleanupGoals();
+
+	virtual goal_process_t ProcessGoal(Goal *g) = 0;
 	virtual void Update() = 0;
 };
