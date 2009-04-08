@@ -2,9 +2,9 @@
 #include "Goal.h"
 #include "UnitAI.h"
 
-bool UnitGroupAI::ProcessGoal(Goal* goal)
+GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 {
-	return false;
+	return PROCESS_BREAK;
 }
 
 void UnitGroupAI::Update()

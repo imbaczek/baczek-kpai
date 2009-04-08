@@ -16,10 +16,12 @@ public:
 	BaczekKPAI* ai;
 
 	UnitGroupAI* builders;
+	UnitGroupAI* bases;
 	boost::ptr_vector<UnitGroupAI> groups;
 
-	bool ProcessGoal(Goal* g);
+	goal_process_t ProcessGoal(Goal* g);
 	void Update();
 
 	void FindGoals();
+
 };

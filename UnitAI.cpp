@@ -12,11 +12,16 @@ UnitAI::~UnitAI(void)
 {
 }
 
-bool UnitAI::ProcessGoal(Goal* goal)
+GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 {
-	if (goal->is_executing()) {
-		return true;
+	if (goal->is_finished()) {
+		return PROCESS_POP_CONTINUE;
 	}
+
+	if (goal->is_executing()) {
+		return PROCESS_BREAK;
+	}
+
 	switch (goal->type) {
 		case BUILD_EXPANSION: {
 			Command c;
@@ -33,7 +38,7 @@ bool UnitAI::ProcessGoal(Goal* goal)
 	default:
 		break;
 	}
-	return true;
+	return PROCESS_BREAK;
 }
 
 void UnitAI::Update()

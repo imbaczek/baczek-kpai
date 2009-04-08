@@ -123,7 +123,7 @@ void BaczekKPAI::UnitCreated(int unit)
 	myUnits.insert(unit);
 
 	assert(!unitTable[unit]);
-	unitTable[unit] = new Unit(unit);
+	unitTable[unit] = new Unit(this, unit);
 }
 
 void BaczekKPAI::UnitFinished(int unit)

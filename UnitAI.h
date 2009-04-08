@@ -14,7 +14,7 @@ public:
 	Unit* owner;
 	BaczekKPAI* ai;
 
-	bool ProcessGoal(Goal* g);
+	goal_process_t ProcessGoal(Goal* g);
 	void Update();
 	void OwnerKilled();
 

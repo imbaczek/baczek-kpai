@@ -22,6 +22,6 @@ public:
 
 	float3 rallyPoint;
 
-	bool ProcessGoal(Goal* g);
+	goal_process_t ProcessGoal(Goal* g);
 	void Update();
 };
