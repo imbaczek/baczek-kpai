@@ -120,6 +120,7 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 void BaczekKPAI::UnitCreated(int unit)
 {
 	ailog->info() << "unit created: " << unit << std::endl;
+	cb->SendTextMsg("unit created", 0);
 	myUnits.insert(unit);
 
 	assert(!unitTable[unit]);
@@ -132,6 +133,7 @@ void BaczekKPAI::UnitFinished(int unit)
 
 	assert(unitTable[unit]);
 	unitTable[unit]->OnComplete();
+	toplevel->AssignUnitToGroup(unitTable[unit]);
 }
 
 void BaczekKPAI::UnitDestroyed(int unit,int attacker)

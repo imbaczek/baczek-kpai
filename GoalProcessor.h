@@ -54,9 +54,13 @@ public:
 					case PROCESS_CONTINUE:
 						break;
 					case PROCESS_POP_BREAK:
+						if (!g->is_finished())
+							g->abort();
 						todel.push_back(gid);
 						goto end;
 					case PROCESS_POP_CONTINUE:
+						if (!g->is_finished())
+							g->abort();
 						todel.push_back(gid);
 						break;
 				}

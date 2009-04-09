@@ -42,6 +42,7 @@ public:
 		flags = 0;
 		priority = 0;
 		type = NO_TYPE;
+		parent = -1;
 	}
 
 	Goal(int priority, Type type)
@@ -50,6 +51,7 @@ public:
 		flags = 0;
 		this->priority = priority;
 		this->type = type;
+		parent = -1;
 	}
 
 	~Goal() {};
@@ -75,6 +77,7 @@ public:
 	int id;
 	int priority;
 	int flags;
+	int parent;
 	Type type;
 	param_vector params;
 	std::vector<int> nextGoals;
@@ -190,3 +193,20 @@ inline void Goal::RemoveGoal(Goal* g)
 		g_goals.release(it);
 	}
 }
+
+
+/////////////////////////////////////
+// goal utilities, functors, etc
+
+
+struct AbortGoal : public std::unary_function<Goal&, void> {
+	Goal& self;
+	AbortGoal(Goal& s):self(s) {}
+	void operator()(Goal& other) { if (!self.is_finished()) self.abort(); }
+};
+
+struct CompleteGoal : public std::unary_function<Goal&, void> {
+	Goal& self;
+	CompleteGoal(Goal& s):self(s) {}
+	void operator()(Goal& other) { if (!self.is_finished()) self.complete(); }
+};

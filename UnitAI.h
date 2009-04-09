@@ -24,3 +24,7 @@ public:
 	int FindExpansionUnitDefId();
 	int FindConstructorUnitDefId();
 };
+
+bool operator<(const UnitAI& a, const UnitAI& b);
+bool operator==(const UnitAI& a, const UnitAI& b);
+

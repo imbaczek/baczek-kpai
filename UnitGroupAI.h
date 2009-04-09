@@ -1,6 +1,7 @@
 #pragma once
 
-#include <boost/ptr_container/ptr_vector.hpp>
+#include <map>
+#include <boost/shared_ptr.hpp>
 
 #include "float3.h"
 
@@ -18,10 +19,16 @@ public:
 
 	BaczekKPAI* ai;
 
-	boost::ptr_vector<UnitAI> units;
+	typedef boost::shared_ptr<UnitAI> UnitAIPtr;
+	typedef std::map<int, UnitAIPtr> UnitAISet;
+
+	UnitAISet units;
 
 	float3 rallyPoint;
 
 	goal_process_t ProcessGoal(Goal* g);
 	void Update();
+
+	void AssignUnit(Unit* unit);
+	void RemoveUnit(Unit* unit);
 };

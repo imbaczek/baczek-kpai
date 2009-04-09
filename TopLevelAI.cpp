@@ -40,6 +40,7 @@ void TopLevelAI::Update()
 
 	// update unit groups
 	builders->Update();
+	bases->Update();
 	BOOST_FOREACH(UnitGroupAI& it, groups) {
 		it.Update();
 	}
@@ -57,9 +58,29 @@ GoalProcessor::goal_process_t TopLevelAI::ProcessGoal(Goal* g)
 				// add goal for builder group
 				Goal *newgoal = Goal::GetGoal(Goal::CreateGoal(g->priority, BUILD_EXPANSION));
 				newgoal->params.push_back(g->params[0]);
-				builders->AddGoal(g);
+				newgoal->parent = g->id;
+
+				g->OnAbort(AbortGoal(*newgoal));
+				g->OnComplete(CompleteGoal(*newgoal));
+				newgoal->OnComplete(CompleteGoal(*g));
+
+				builders->AddGoal(newgoal);
 				// execute
 				g->start();
+			}
+			break;
+		case BUILD_CONSTRUCTOR:
+			ailog->info() << "goal: BUILD_CONSTRUCTOR" << std::endl;
+			if (!g->is_executing()) {
+				Goal *newgoal = Goal::GetGoal(Goal::CreateGoal(g->priority, BUILD_CONSTRUCTOR));
+				newgoal->parent = g->id;
+				
+				g->OnAbort(AbortGoal(*newgoal));
+				g->OnComplete(CompleteGoal(*newgoal));
+				newgoal->OnComplete(CompleteGoal(*g));
+
+				bases->AddGoal(newgoal);
+				g->start();						
 			}
 			break;
 		default:
@@ -151,3 +172,13 @@ void TopLevelAI::FindGoals()
 	}
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+
+void TopLevelAI::AssignUnitToGroup(Unit* unit)
+{
+	if (unit->is_base)
+		bases->AssignUnit(unit);
+	else if (unit->is_constructor)
+		builders->AssignUnit(unit);
+}

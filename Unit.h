@@ -2,6 +2,8 @@
 
 // a thin wrapper on friendly unitids
 
+#include <boost/shared_ptr.hpp>
+
 #include "Sim/Units/UnitDef.h"
 
 #include "UnitAI.h"
@@ -17,15 +19,22 @@ public:
 	int id;
 
 	BaczekKPAI *global_ai;
-	UnitAI *ai;
+	boost::shared_ptr<UnitAI> ai;
 
+	// unit status flags
 	bool complete;
 	bool killed;
 
+	// unit type flags
 	bool is_constructor;
 	bool is_base;
 
-	Unit(BaczekKPAI* g_ai, int id) : global_ai(g_ai), id(id), complete(false), killed(false) { Init(); }
+	// unit state flags
+	bool is_producing;
+
+	Unit(BaczekKPAI* g_ai, int id) : global_ai(g_ai), id(id), complete(false), killed(false),
+		is_producing(false)
+	{ Init(); }
 	~Unit() {}
 
 	void OnComplete() { complete = true; }

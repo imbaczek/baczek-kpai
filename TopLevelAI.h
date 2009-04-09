@@ -22,6 +22,7 @@ public:
 	goal_process_t ProcessGoal(Goal* g);
 	void Update();
 
+	void AssignUnitToGroup(Unit* unit);
 	void FindGoals();
 
 };
