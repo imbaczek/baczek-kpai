@@ -73,7 +73,8 @@ end:
 			if (it != goals.end()) {
 				Goal* g = Goal::GetGoal(*it);
 				assert(g);
-				g->abort();
+				if (!g->is_finished())
+					g->abort();
 				goals.erase(it);
 			}
 		}
