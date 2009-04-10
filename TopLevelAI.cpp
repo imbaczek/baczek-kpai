@@ -50,6 +50,8 @@ GoalProcessor::goal_process_t TopLevelAI::ProcessGoal(Goal* g)
 {
 	if (!g)
 		return PROCESS_POP_CONTINUE;
+	if (g->is_finished())
+		return PROCESS_POP_CONTINUE;
 
 	switch (g->type) {
 		case BUILD_EXPANSION:

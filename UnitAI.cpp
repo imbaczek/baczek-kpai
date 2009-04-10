@@ -36,6 +36,10 @@ bool operator==(const UnitAI& a, const UnitAI& b)
 
 GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 {
+	if (!goal) {
+		return PROCESS_POP_CONTINUE;
+	}
+
 	if (goal->is_finished()) {
 		return PROCESS_POP_CONTINUE;
 	}
