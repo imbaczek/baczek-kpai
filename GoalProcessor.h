@@ -54,13 +54,11 @@ public:
 					case PROCESS_CONTINUE:
 						break;
 					case PROCESS_POP_BREAK:
-						if (!g->is_finished())
-							g->abort();
+						// goal will be aborted later
 						todel.push_back(gid);
 						goto end;
 					case PROCESS_POP_CONTINUE:
-						if (!g->is_finished())
-							g->abort();
+						// goal will be aborted later
 						todel.push_back(gid);
 						break;
 				}
@@ -72,8 +70,7 @@ end:
 			GoalStack::iterator it = std::find(goals.begin(), goals.end(), gid);
 			if (it != goals.end()) {
 				Goal* g = Goal::GetGoal(*it);
-				assert(g);
-				if (!g->is_finished())
+				if (g && !g->is_finished())
 					g->abort();
 				goals.erase(it);
 			}
