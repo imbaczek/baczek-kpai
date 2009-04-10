@@ -331,6 +331,30 @@ void BaczekKPAI::DumpStatus()
 	python->DumpStatus(frame, geovents, friends, enemies);
 }
 
+///////////////////
+// spatial queries
+
+void BaczekKPAI::GetAllUnitsInRadius(std::vector<int>& vec, float3 pos, float radius)
+{
+	int friends[MAX_UNITS];
+	int friend_cnt;
+	int enemies[MAX_UNITS];
+	int enemy_cnt;
+	int neutrals[MAX_UNITS];
+	int neutral_cnt;
+	
+	vec.clear();
+
+	friend_cnt = cb->GetFriendlyUnits(friends, pos, radius);
+	enemy_cnt = cheatcb->GetEnemyUnits(enemies, pos, radius);
+	neutral_cnt = cheatcb->GetNeutralUnits(neutrals, pos, radius);
+
+	vec.reserve(friend_cnt + enemy_cnt + neutral_cnt);
+	std::copy(friends, friends+friend_cnt, std::back_inserter(vec));
+	std::copy(enemies, enemies+enemy_cnt, std::back_inserter(vec));
+	std::copy(neutrals, neutrals+neutral_cnt, std::back_inserter(vec));
+}
+
 
 ///////////////
 // pathfinder

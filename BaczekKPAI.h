@@ -105,6 +105,8 @@ public:
 
 	Unit* GetUnit(int id) { return unitTable[id]; }
 	
+	void GetAllUnitsInRadius(std::vector<int>& vec, float3 pos, float radius);
+
 	float EstimateSqDistancePF(int unitID, const float3& start, const float3& end);
 	float EstimateSqDistancePF(const UnitDef* unitdef, const float3& start, const float3& end);
 	// slower versions for precise distance
