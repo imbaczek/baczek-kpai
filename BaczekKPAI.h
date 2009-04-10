@@ -102,6 +102,11 @@ public:
 #ifdef USE_STATUS_WINDOW
 	MyFrame *frame;
 #endif
+
+	Unit* GetUnit(int id) { return unitTable[id]; }
+	
+	float EstimateSqDistancePF(int unitID, const float3& start, const float3& end);
+	float EstimateSqDistancePF(const UnitDef* unitdef, const float3& start, const float3& end);
 };
 
 #endif // !defined(AFX_GroupAI_H__10718E36_5CDF_4CD4_8D90_F41311DD2694__INCLUDED_)

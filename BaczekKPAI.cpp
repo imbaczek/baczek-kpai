@@ -330,3 +330,51 @@ void BaczekKPAI::DumpStatus()
 
 	python->DumpStatus(frame, geovents, friends, enemies);
 }
+
+
+///////////////
+// pathfinder
+//
+// should just use GetPathLength, but it's not implemented yet!
+
+
+inline float BaczekKPAI::EstimateSqDistancePF(int unitID, const float3& start, const float3& end)
+{
+	const UnitDef* ud = cb->GetUnitDef(unitID);
+	return EstimateSqDistancePF(ud, start, end);
+}
+
+float BaczekKPAI::EstimateSqDistancePF(const UnitDef* unitdef, const float3& start, const float3& end)
+{
+	int pathId = cb->InitPath(start, end, unitdef->moveType);
+	float sqdist = 0;
+	float3 prev = start;
+
+	ailog->info() << "PF start: " << start << std::endl;
+	while(true) {
+		float3 cur;
+		do {
+			cur = cb->GetNextWaypoint(pathId);
+		} while (cur.y == -2); // y == -2 means "try again"
+		
+		ailog->info() << "PF waypoint: " << cur << std::endl;
+		// y == -1 means no path or end of path
+		if (cur.y < 0) {
+			if (cur.x < 0 || cur.z < 0) // error
+				return -1;
+			else {
+				// last waypoint reached
+				ailog->info() << "PF end: " << cur << " " << end << std::endl;
+				sqdist += cur.SqDistance2D(end);
+				// end here!
+				break;
+			}
+		} else {
+			sqdist += cur.SqDistance2D(prev);
+			prev = cur;
+		}
+	}
+
+	cb->FreePath(pathId);
+	return sqdist;
+}
