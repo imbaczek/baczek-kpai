@@ -334,6 +334,8 @@ void BaczekKPAI::DumpStatus()
 ///////////////////
 // spatial queries
 
+
+/// union three queries
 void BaczekKPAI::GetAllUnitsInRadius(std::vector<int>& vec, float3 pos, float radius)
 {
 	int friends[MAX_UNITS];
@@ -374,21 +376,21 @@ float BaczekKPAI::EstimateSqDistancePF(const UnitDef* unitdef, const float3& sta
 	float sqdist = 0;
 	float3 prev = start;
 
-	ailog->info() << "PF start: " << start << std::endl;
 	while(true) {
 		float3 cur;
 		do {
 			cur = cb->GetNextWaypoint(pathId);
 		} while (cur.y == -2); // y == -2 means "try again"
+
+		if (prev == cur) // end of path
+			break;
 		
-		ailog->info() << "PF waypoint: " << cur << std::endl;
 		// y == -1 means no path or end of path
 		if (cur.y < 0) {
 			if (cur.x < 0 || cur.z < 0) // error
 				return -1;
 			else {
 				// last waypoint reached
-				ailog->info() << "PF end: " << cur << " " << end << std::endl;
 				sqdist += cur.SqDistance2D(end);
 				// end here!
 				break;
@@ -417,21 +419,21 @@ float BaczekKPAI::EstimateDistancePF(const UnitDef* unitdef, const float3& start
 	float dist = 0;
 	float3 prev = start;
 
-	ailog->info() << "PF start: " << start << std::endl;
 	while(true) {
 		float3 cur;
 		do {
 			cur = cb->GetNextWaypoint(pathId);
 		} while (cur.y == -2); // y == -2 means "try again"
 		
-		ailog->info() << "PF waypoint: " << cur << std::endl;
+		if (prev == cur) // end of path
+			break;
+		
 		// y == -1 means no path or end of path
 		if (cur.y < 0) {
 			if (cur.x < 0 || cur.z < 0) // error
 				return -1;
 			else {
 				// last waypoint reached
-				ailog->info() << "PF end: " << cur << " " << end << std::endl;
 				dist += cur.distance2D(end);
 				// end here!
 				break;
