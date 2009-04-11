@@ -46,6 +46,13 @@ void TopLevelAI::Update()
 	}
 }
 
+
+struct RemoveGoalFromSkipped : public std::unary_function<Goal&, void> {
+	TopLevelAI& self;
+	RemoveGoalFromSkipped(TopLevelAI& s):self(s) {}
+	void operator()(Goal& g) { self.skippedGoals.erase(g.id); }
+};
+
 GoalProcessor::goal_process_t TopLevelAI::ProcessGoal(Goal* g)
 {
 	if (!g)
@@ -56,19 +63,20 @@ GoalProcessor::goal_process_t TopLevelAI::ProcessGoal(Goal* g)
 	switch (g->type) {
 		case BUILD_EXPANSION:
 			ailog->info() << "goal: BUILD_EXPANSION (" << g->params[0] << ")" << std::endl;
-			if (!g->is_executing()) {
+			if (!g->is_executing() || skippedGoals.find(g->id) != skippedGoals.end()) {
 				// add goal for builder group
 				Goal *newgoal = Goal::GetGoal(Goal::CreateGoal(g->priority, BUILD_EXPANSION));
 				newgoal->params.push_back(g->params[0]);
 				newgoal->parent = g->id;
 
 				g->OnAbort(AbortGoal(*newgoal));
+				g->OnAbort(RemoveGoalFromSkipped(*this));
 				g->OnComplete(CompleteGoal(*newgoal));
+				g->OnComplete(RemoveGoalFromSkipped(*this));
 				newgoal->OnComplete(CompleteGoal(*g));
 
 				builders->AddGoal(newgoal);
-				// execute
-				g->start();
+				skippedGoals.insert(g->id);
 			}
 			break;
 		case BUILD_CONSTRUCTOR:
@@ -79,10 +87,13 @@ GoalProcessor::goal_process_t TopLevelAI::ProcessGoal(Goal* g)
 				
 				g->OnAbort(AbortGoal(*newgoal));
 				g->OnComplete(CompleteGoal(*newgoal));
+				
 				newgoal->OnComplete(CompleteGoal(*g));
+				// start only when child starts
+				newgoal->OnStart(StartGoal(*g));
 
 				bases->AddGoal(newgoal);
-				g->start();						
+				g->start();		
 			}
 			break;
 		default:
@@ -99,13 +110,46 @@ GoalProcessor::goal_process_t TopLevelAI::ProcessGoal(Goal* g)
 
 void TopLevelAI::FindGoals()
 {
+	std::vector<float3> badSpots;
+
 	// find free geo spots to build expansions on
 	ailog->info() << "FindGoal() expansions" << std::endl;
 	BOOST_FOREACH(float3 geo, ai->geovents) {
+		// check if the expansion spot is taken
+		std::vector<int> stuff;
+		ai->GetAllUnitsInRadius(stuff, geo, 32);
+		bool badspot = false;
+		BOOST_FOREACH(int id, stuff) {
+			const UnitDef* ud = ai->cb->GetUnitDef(id);
+			// TODO make configurable
+			if (ud->name == "socket" || ud->name == "port" || ud->name == "window"
+					|| ud->name == "terminal" || ud->name == "firewall" || ud->name == "obelisk"
+					|| ud->name == "kernel" || ud->name == "carrier" || ud->name == "hole") {
+				badspot = true;
+				break;
+			}
+				
+		}
+		if (badspot) {
+			badSpots.push_back(geo);
+			continue;
+		}
+
+		// calculate priority
 		// TODO priority should be a function of distance and risk
-		int priority = ai->cb->GetCurrentFrame();
+		float minDistance = bases->SqDistanceClosestUnit(geo, 0, 0);
+		// can't reach
+		if (minDistance < 0)
+			continue;
+
+		int influence = ai->influence->GetAtXY(geo.x, geo.z);
+		// TODO make constant configurable
+		int k = 10;
+		int priority = influence - (int)(minDistance/(ai->map.w*ai->map.w*SQUARE_SIZE*SQUARE_SIZE))*k;
+		ailog->info() << "geo at " << geo << " distance to nearest base squared " << minDistance
+			<< " influence " << influence << " priority " << priority << std::endl;
 		// check if there already is a goal with this position
-		// or if somebody built an expansion there
+		bool dontadd = false;
 		BOOST_FOREACH(int gid, goals) {
 			Goal* goal = Goal::GetGoal(gid);
 			if (!goal) {
@@ -114,8 +158,7 @@ void TopLevelAI::FindGoals()
 			}
 			if (goal->type != BUILD_EXPANSION)
 				continue;
-			if (goal->priority == priority)
-				continue;
+
 			if (goal->params.empty()) {
 				ailog->error() << "TopLevel BUILD_EXPANSION without param, removing" << endl;
 				Goal::RemoveGoal(goal);
@@ -127,15 +170,44 @@ void TopLevelAI::FindGoals()
 				Goal::RemoveGoal(goal);
 				continue;
 			}
+
+			// try to avoid duplicate goals, don't abort goals which are being executed
 			if (param->SqDistance2D(geo) < 1) {
-				ailog->info() << "aborting old BUILD_EXPANSION goal at " << param << endl;
-				Goal::RemoveGoal(goal);
+				if (goal->priority == priority || goal->is_executing()) {
+					dontadd = true;
+					break;
+				} else {
+					ailog->info() << "aborting old BUILD_EXPANSION goal at " << *param << endl;
+					Goal::RemoveGoal(goal);
+				}
 			}
 		}
 		// add the goal
-		Goal *g = Goal::GetGoal(Goal::CreateGoal(priority, BUILD_EXPANSION));
-		g->params.push_back(geo);
-		AddGoal(g);
+		if (!dontadd) {
+			Goal *g = Goal::GetGoal(Goal::CreateGoal(priority, BUILD_EXPANSION));
+			g->params.push_back(geo);
+			AddGoal(g);
+		}
+	}
+
+	// filter out goals on bad spots
+	BOOST_FOREACH(int gid, goals) {
+		Goal* goal = Goal::GetGoal(gid);
+		if (!goal)
+			continue;
+		if (goal->type != BUILD_EXPANSION)
+			continue;
+		if (skippedGoals.find(gid) != skippedGoals.end())
+			continue;
+		if (goal->is_executing())
+			continue;
+		float3 *param = boost::get<float3>(&goal->params[0]);
+		assert(param);
+
+		BOOST_FOREACH(float3 geo, badSpots) {
+			if (geo == *param)
+				Goal::RemoveGoal(goal);
+		}
 	}
 
 	/////////////////////////////////////////////////////
@@ -172,6 +244,8 @@ void TopLevelAI::FindGoals()
 		assert(g);
 		AddGoal(g);
 	}
+
+	std::sort(goals.begin(), goals.end(), goal_priority_less());
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

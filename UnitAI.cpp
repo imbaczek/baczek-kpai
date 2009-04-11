@@ -4,9 +4,8 @@
 #include "UnitAI.h"
 #include "Goal.h"
 
-UnitAI::UnitAI(BaczekKPAI* ai, Unit* owner): owner(owner), ai(ai)
+UnitAI::UnitAI(BaczekKPAI* ai, Unit* owner): owner(owner), ai(ai), currentGoal(0)
 {
-
 }
 
 UnitAI::~UnitAI(void)
@@ -34,6 +33,19 @@ bool operator==(const UnitAI& a, const UnitAI& b)
 ////////////////////////////////////////////////////////////////////////////////
 // overloads
 
+struct on_complete_clean_current_goal : std::unary_function<Goal&, void> {
+	UnitAI* ai;
+	on_complete_clean_current_goal(UnitAI* uai):ai(uai) {}
+	void operator()(Goal& goal) { ai->currentGoal = 0; ailog->info() << "cleaning currentGoal on " << ai->owner->id << std::endl; }
+};
+
+struct on_complete_clean_producing : std::unary_function<Goal&, void> {
+	Unit* unit;
+	on_complete_clean_producing(Unit* u):unit(u) {}
+	void operator()(Goal& goal) { unit->is_producing = false; ailog->info() << "cleaning is_producing on " << unit->id << std::endl; }
+};
+
+
 GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 {
 	if (!goal) {
@@ -50,6 +62,10 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 
 	switch (goal->type) {
 		case BUILD_EXPANSION: {
+			if (!owner->is_constructor) {
+				ailog->error() << "BUILD_EXPANSION issued to non-constructor unit" << std::endl;
+				return PROCESS_POP_CONTINUE;
+			}
 			Command c;
 			c.id = -FindExpansionUnitDefId();
 			assert(c.id);
@@ -59,6 +75,11 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 			c.params.push_back(param.y);
 			c.params.push_back(param.z);
 			ai->cb->GiveOrder(owner->id, &c);
+			goal->OnComplete(on_complete_clean_current_goal(this));
+			goal->OnComplete(on_complete_clean_producing(this->owner));
+			currentGoal = goal;
+			owner->is_producing = true;
+			goal->start();
 			break;
 		}
 		case BUILD_CONSTRUCTOR: {
@@ -76,8 +97,8 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 			goal->complete();
 			return PROCESS_BREAK;
 		}
-	default:
-		return PROCESS_POP_CONTINUE;
+		default:
+			return PROCESS_POP_CONTINUE;
 	}
 	return PROCESS_BREAK;
 }
@@ -88,6 +109,7 @@ void UnitAI::Update()
 	int frameNum = ai->cb->GetCurrentFrame();
 
 	if (frameNum % 30 == 0) {
+		std::sort(goals.begin(), goals.end(), goal_priority_less());
 		ProcessGoalStack();
 		CleanupGoals();
 	}

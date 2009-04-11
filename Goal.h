@@ -210,3 +210,9 @@ struct CompleteGoal : public std::unary_function<Goal&, void> {
 	CompleteGoal(Goal& s):self(s) {}
 	void operator()(Goal& other) { if (!self.is_finished()) self.complete(); }
 };
+
+struct StartGoal : public std::unary_function<Goal&, void> {
+	Goal& self;
+	StartGoal(Goal& s):self(s) {}
+	void operator()(Goal& other) { if (!self.is_executing()) self.start(); }
+};

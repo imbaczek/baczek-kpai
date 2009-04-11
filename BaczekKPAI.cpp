@@ -180,6 +180,10 @@ void BaczekKPAI::EnemyDestroyed(int enemy,int attacker)
 
 void BaczekKPAI::UnitIdle(int unit)
 {
+	Unit* u = GetUnit(unit);
+	if (u->ai->currentGoal && !u->ai->currentGoal->is_finished())
+		u->ai->currentGoal->complete();
+
 	const UnitDef* ud=cb->GetUnitDef(unit);
 
 	static char c[200];

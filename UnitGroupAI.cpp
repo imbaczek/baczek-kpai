@@ -27,7 +27,7 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 				if (unit->is_producing)
 					continue;
 				// FIXME move to a data file
-				Goal *g = Goal::GetGoal(Goal::CreateGoal(1, BUILD_CONSTRUCTOR));
+				Goal *g = Goal::GetGoal(Goal::CreateGoal(goal->priority, BUILD_CONSTRUCTOR));
 				assert(g);
 				g->parent = goal->id;
 
@@ -37,7 +37,7 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 				// behaviour when subgoal changes
 				g->OnComplete(CompleteGoal(*goal));
 
-				ailog->info() << "unit " << unit->id << " assigned to producing a constructor";
+				ailog->info() << "unit " << unit->id << " assigned to producing a constructor" << std::endl;
 				uai->AddGoal(g);
 				goal->start();
 				break;
@@ -53,6 +53,8 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 				assert(unit);
 				if (unit->is_producing)
 					continue;
+				if (usedUnits.find(unit->id) != usedUnits.end())
+					continue;
 				// FIXME move to a data file
 				Goal *g = Goal::GetGoal(Goal::CreateGoal(1, BUILD_EXPANSION));
 				assert(g);
@@ -65,9 +67,10 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 				// behaviour when subgoal changes
 				g->OnComplete(CompleteGoal(*goal));
 
-				ailog->info() << "unit " << unit->id << " assigned to producing a constructor";
+				ailog->info() << "unit " << unit->id << " assigned to building an expansion" << std::endl;
 				uai->AddGoal(g);
 				goal->start();
+				usedUnits.insert(uai->owner->id);
 				break;
 			}
 			return PROCESS_CONTINUE;
@@ -83,6 +86,8 @@ void UnitGroupAI::Update()
 	int frameNum = ai->cb->GetCurrentFrame();
 
 	if (frameNum % 30 == 0) {
+		usedUnits.clear();
+		std::sort(goals.begin(), goals.end(), goal_priority_less());
 		ProcessGoalStack();
 		CleanupGoals();
 	}
@@ -108,4 +113,33 @@ void UnitGroupAI::RemoveUnit(Unit* unit)
 {
 	assert(unit);
 	units.erase(unit->id);
+}
+
+/// if unitdef is NULL, "assembler" is used
+float UnitGroupAI::SqDistanceClosestUnit(const float3& pos, int* unit, const UnitDef* unitdef)
+{
+	float min = 1e30;
+	int found_uid = -1;
+
+	if (!unitdef) {
+		unitdef = ai->cb->GetUnitDef("assembler");
+		if (!unitdef) {
+			ailog->error() << "default unitdef \"assembler\" not found in SqDistanceClosestUnit" << std::endl;
+			return -1;
+		}
+	}
+
+	BOOST_FOREACH(const UnitAISet::value_type& v, units) {
+		int id = v.first;
+		float3 upos = ai->cb->GetUnitPos(id);
+		float tmp = ai->EstimateSqDistancePF(unitdef, upos, pos);
+		if (tmp < min) {
+			min = tmp;
+			found_uid = id;
+		}
+	}
+	
+	if (unit)
+		*unit = found_uid;
+	return min;
 }
