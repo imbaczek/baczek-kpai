@@ -25,6 +25,7 @@
 #include "Log.h"
 #include "InfluenceMap.h"
 #include "PythonScripting.h"
+#include "RNG.h"
 
 
 namespace fs = boost::filesystem;
@@ -89,6 +90,10 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	map.w = cb->GetMapWidth();
 	map.squareSize = SQUARE_SIZE;
 
+	float3::maxxpos = map.w * SQUARE_SIZE;
+	float3::maxzpos = map.h * SQUARE_SIZE;
+	ailog->info() << "Map size: " << float3::maxxpos << "x" << float3::maxzpos << std::endl;
+
 	FindGeovents();
 
 	std::string influence_conf = dd+"influence.json";
@@ -101,6 +106,8 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	python = new PythonScripting(team, datadir);
 
 	toplevel = new TopLevelAI(this);
+
+	assert(random() != random() || random() != random());
 	
 #ifdef USE_STATUS_WINDOW
 	int argc = 1;

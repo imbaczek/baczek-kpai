@@ -1,6 +1,9 @@
 #include <algorithm>
 #include <strstream>
 #include <boost/foreach.hpp>
+#include <cmath>
+#include <boost/math/constants/constants.hpp>
+
 
 #include "ExternalAI/IGlobalAICallback.h"
 #include "ExternalAI/IAICheats.h"
@@ -11,6 +14,7 @@
 #include "TopLevelAI.h"
 #include "BaczekKPAI.h"
 #include "Unit.h"
+#include "RNG.h"
 
 
 TopLevelAI::TopLevelAI(BaczekKPAI* theai)
@@ -125,7 +129,8 @@ void TopLevelAI::FindGoals()
 		ai->GetAllUnitsInRadius(stuff, geo, 32);
 		bool badspot = false;
 		BOOST_FOREACH(int id, stuff) {
-			const UnitDef* ud = ai->cb->GetUnitDef(id);
+			const UnitDef* ud = ai->cheatcb->GetUnitDef(id);
+			assert(ud);
 			// TODO make configurable
 			if (ud->name == "socket" || ud->name == "port" || ud->name == "window"
 					|| ud->name == "terminal" || ud->name == "firewall" || ud->name == "obelisk"
@@ -133,10 +138,10 @@ void TopLevelAI::FindGoals()
 				badspot = true;
 				break;
 			}
-				
 		}
 		if (badspot) {
 			badSpots.push_back(geo);
+			ailog->info() << geo << " is a bad spot" << std::endl;
 			continue;
 		}
 
@@ -149,8 +154,13 @@ void TopLevelAI::FindGoals()
 
 		int influence = ai->influence->GetAtXY(geo.x, geo.z);
 		// TODO make constant configurable
-		int k = 10;
-		int priority = influence - (int)(minDistance/(ai->map.w*ai->map.w*SQUARE_SIZE*SQUARE_SIZE))*k;
+		if (influence < 0)
+			continue;
+
+		// TODO make constant configurable
+		float k = 100;
+		float divider = (float)(ai->map.w*ai->map.w + ai->map.h*ai->map.h);
+		int priority = influence - (int)((minDistance/divider)*k);
 		ailog->info() << "geo at " << geo << " distance to nearest base squared " << minDistance
 			<< " influence " << influence << " priority " << priority << std::endl;
 		// check if there already is a goal with this position
@@ -196,12 +206,15 @@ void TopLevelAI::FindGoals()
 	}
 
 	// filter out goals on bad spots
+	// also check if there are BUILD_EXPANSION goals at all
+	int expansionGoals = 0;
 	BOOST_FOREACH(int gid, goals) {
 		Goal* goal = Goal::GetGoal(gid);
 		if (!goal)
 			continue;
 		if (goal->type != BUILD_EXPANSION)
 			continue;
+		++expansionGoals;
 		if (skippedGoals.find(gid) != skippedGoals.end())
 			continue;
 		if (goal->is_executing())
@@ -210,8 +223,29 @@ void TopLevelAI::FindGoals()
 		assert(param);
 
 		BOOST_FOREACH(float3 geo, badSpots) {
-			if (geo == *param)
+			if (geo == *param) {
 				Goal::RemoveGoal(goal);
+				--expansionGoals;
+				break;
+			}
+		}
+	}
+	assert(expansionGoals >= 0);
+	if (expansionGoals == 0) {
+		// there are no expansions left to take, retreat builders
+		// retreat to one of the bases
+		if (!bases->units.empty()) {
+			float3 basePos = ai->cb->GetUnitPos(bases->units.begin()->second->owner->id);
+			float3 dest;
+			do {
+				float x = random(0, 2*boost::math::constants::pi<float>());
+				float r = random(SQUARE_SIZE*4, SQUARE_SIZE*10);
+				float3 modDir(sin(x), 0, cos(x));
+				dest = basePos + modDir * r;
+			} while (!dest.IsInBounds());
+			Goal* goal = Goal::GetGoal(Goal::CreateGoal(1, RETREAT));
+			goal->params.push_back(dest);
+			builders->AddGoal(goal);
 		}
 	}
 
@@ -243,6 +277,7 @@ void TopLevelAI::FindGoals()
 	ailog->info() << "FindGoal() found " << goalcnt  << " BUILD_CONSTRUCTOR goals" << std::endl;
 
 	// FIXME magic number
+	// should be a function of time passed and map size/free geospots
 	if (goalcnt + bldcnt < 3) {
 		ailog->info() << "adding BUILD_CONSTRUCTOR goal" << std::endl;
 		Goal* g = Goal::GetGoal(Goal::CreateGoal(1, BUILD_CONSTRUCTOR));
