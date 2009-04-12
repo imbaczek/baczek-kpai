@@ -247,6 +247,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\RNG.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\TopLevelAI.cpp"
 				>
 			</File>
@@ -353,6 +357,10 @@
 			</File>
 			<File
 				RelativePath=".\PythonScripting.h"
+				>
+			</File>
+			<File
+				RelativePath=".\RNG.h"
 				>
 			</File>
 			<File
