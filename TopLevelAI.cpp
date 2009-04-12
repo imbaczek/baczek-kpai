@@ -62,25 +62,30 @@ GoalProcessor::goal_process_t TopLevelAI::ProcessGoal(Goal* g)
 
 	switch (g->type) {
 		case BUILD_EXPANSION:
-			ailog->info() << "goal: BUILD_EXPANSION (" << g->params[0] << ")" << std::endl;
-			if (!g->is_executing() || skippedGoals.find(g->id) != skippedGoals.end()) {
+			ailog->info() << "goal " << g->id << ": BUILD_EXPANSION (" << g->params[0] << ")" << std::endl;
+			if (!g->is_executing() && skippedGoals.find(g->id) == skippedGoals.end()) {
 				// add goal for builder group
 				Goal *newgoal = Goal::GetGoal(Goal::CreateGoal(g->priority, BUILD_EXPANSION));
 				newgoal->params.push_back(g->params[0]);
 				newgoal->parent = g->id;
 
+				// events for current goal
 				g->OnAbort(AbortGoal(*newgoal));
 				g->OnAbort(RemoveGoalFromSkipped(*this));
 				g->OnComplete(CompleteGoal(*newgoal));
 				g->OnComplete(RemoveGoalFromSkipped(*this));
+
+				// events for subgoal
 				newgoal->OnComplete(CompleteGoal(*g));
+				newgoal->OnStart(StartGoal(*g));
+				newgoal->OnAbort(AbortGoal(*g));
 
 				builders->AddGoal(newgoal);
 				skippedGoals.insert(g->id);
 			}
 			break;
 		case BUILD_CONSTRUCTOR:
-			ailog->info() << "goal: BUILD_CONSTRUCTOR" << std::endl;
+			ailog->info() << "goal " << g->id << ": BUILD_CONSTRUCTOR" << std::endl;
 			if (!g->is_executing()) {
 				Goal *newgoal = Goal::GetGoal(Goal::CreateGoal(g->priority, BUILD_CONSTRUCTOR));
 				newgoal->parent = g->id;
@@ -177,7 +182,7 @@ void TopLevelAI::FindGoals()
 					dontadd = true;
 					break;
 				} else {
-					ailog->info() << "aborting old BUILD_EXPANSION goal at " << *param << endl;
+					ailog->info() << "aborting old BUILD_EXPANSION goal " << goal->id << " at " << *param << endl;
 					Goal::RemoveGoal(goal);
 				}
 			}

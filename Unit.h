@@ -40,6 +40,7 @@ public:
 	void OnComplete() { complete = true; }
 	void OnDestroy(int attacker) { killed = true; }
 	
+	// FIXME move to data file
 	static bool IsConstructor(const UnitDef* ud) { return ud->name == "assembler" || ud->name == "gateway" || ud->name == "trojan"; }
 	static bool IsBase(const UnitDef* ud) { return ud->name == "kernel" || ud->name == "hole" || ud->name == "carrier"; }
 };

@@ -170,3 +170,10 @@ int UnitAI::FindConstructorUnitDefId()
 	return 0;
 }
 
+
+void UnitAI::CompleteCurrentGoal()
+{
+	if (currentGoal && !currentGoal->is_finished())
+		currentGoal->complete();
+	owner->is_producing = false;
+}

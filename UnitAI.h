@@ -24,6 +24,8 @@ public:
 	// constructor stuff
 	int FindExpansionUnitDefId();
 	int FindConstructorUnitDefId();
+
+	void CompleteCurrentGoal();
 };
 
 bool operator<(const UnitAI& a, const UnitAI& b);

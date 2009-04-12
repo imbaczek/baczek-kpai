@@ -55,22 +55,34 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 					continue;
 				if (usedUnits.find(unit->id) != usedUnits.end())
 					continue;
+				if (usedGoals.find(goal->id) != usedGoals.end())
+					continue;
 				// FIXME move to a data file
 				Goal *g = Goal::GetGoal(Goal::CreateGoal(1, BUILD_EXPANSION));
 				assert(g);
+				assert(goal->params.size() >= 1);
 				g->parent = goal->id;
 				g->params.push_back(goal->params[0]);
 
 				// behaviour when parent goal changes
-				goal->OnAbort(AbortGoal(*g));
-				goal->OnComplete(CompleteGoal(*g));
-				// behaviour when subgoal changes
-				g->OnComplete(CompleteGoal(*goal));
+				goal->OnAbort(AbortGoal(*g)); // abort subgoal
+				goal->OnComplete(CompleteGoal(*g)); // complete subgoal
 
-				ailog->info() << "unit " << unit->id << " assigned to building an expansion" << std::endl;
+				// behaviour when subgoal changes
+				// mark parent as complete
+				g->OnComplete(CompleteGoal(*goal));
+				// remove marks
+				g->OnComplete(RemoveUsedUnit(*this, unit->id));
+				g->OnComplete(RemoveUsedGoal(*this, goal->id));
+				g->OnAbort(RemoveUsedUnit(*this, unit->id));
+				g->OnAbort(RemoveUsedGoal(*this, goal->id));
+
+				ailog->info() << "unit " << unit->id << " assigned to building an expansion (goal id " << goal->id
+					<< " " << goal->params[0] << ")" << std::endl;
 				uai->AddGoal(g);
 				goal->start();
-				usedUnits.insert(uai->owner->id);
+				usedUnits.insert(unit->id);
+				usedGoals.insert(goal->id);
 				break;
 			}
 			return PROCESS_CONTINUE;

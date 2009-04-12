@@ -11,6 +11,8 @@
 
 #include "float3.h"
 
+#include "Log.h"
+
 enum Type {
 	ATTACK_UNIT,
 	ATTACK_AREA,
@@ -122,26 +124,31 @@ public:
 	void start() {
 		assert(!is_finished());
 		flags = EXECUTING;
+		ailog->info() << "starting goal " << id << std::endl;
 		onStart(*this);
 	}
 	void suspend() {
 		assert(!is_finished());
 		flags = SUSPENDED;
+		ailog->info() << "suspending goal " << id << std::endl;
 		onSuspend(*this);
 	}
 	void continue_() {
 		assert(!is_finished());
 		flags = EXECUTING;
+		ailog->info() << "continuing goal " << id << std::endl;
 		onContinue(*this);
 	}
 	void complete() {
 		assert(!is_finished());
 		flags = FINISHED | COMPLETED;
+		ailog->info() << "completing goal " << id << std::endl;
 		onComplete(*this);
 	}
 	void abort() {
 		assert(!is_finished());
 		flags = FINISHED | ABORTED;
+		ailog->info() << "aborting goal " << id << std::endl;
 		onAbort(*this);
 	}
 
@@ -202,17 +209,17 @@ inline void Goal::RemoveGoal(Goal* g)
 struct AbortGoal : public std::unary_function<Goal&, void> {
 	Goal& self;
 	AbortGoal(Goal& s):self(s) {}
-	void operator()(Goal& other) { if (!self.is_finished()) self.abort(); }
+	void operator()(Goal& other) { ailog->info() << "AbortGoal(" << self.id << ")" << std::endl; if (!self.is_finished()) self.abort(); }
 };
 
 struct CompleteGoal : public std::unary_function<Goal&, void> {
 	Goal& self;
 	CompleteGoal(Goal& s):self(s) {}
-	void operator()(Goal& other) { if (!self.is_finished()) self.complete(); }
+	void operator()(Goal& other) { ailog->info() << "CompleteGoal(" << self.id << ")" << std::endl; if (!self.is_finished()) self.complete(); }
 };
 
 struct StartGoal : public std::unary_function<Goal&, void> {
 	Goal& self;
 	StartGoal(Goal& s):self(s) {}
-	void operator()(Goal& other) { if (!self.is_executing()) self.start(); }
+	void operator()(Goal& other) { ailog->info() << "StartGoal(" << self.id << ")" << std::endl; if (!self.is_executing()) self.start(); }
 };
