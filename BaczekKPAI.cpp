@@ -188,7 +188,8 @@ void BaczekKPAI::EnemyDestroyed(int enemy,int attacker)
 void BaczekKPAI::UnitIdle(int unit)
 {
 	Unit* u = GetUnit(unit);
-	u->ai->CompleteCurrentGoal();
+	if (u->ai)
+		u->ai->CompleteCurrentGoal();
 
 	const UnitDef* ud=cb->GetUnitDef(unit);
 
