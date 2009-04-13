@@ -21,6 +21,8 @@ public:
 	boost::ptr_vector<UnitGroupAI> groups;
 	std::set<int> skippedGoals;
 
+	int builderRetreatGoalId;
+
 	goal_process_t ProcessGoal(Goal* g);
 	void Update();
 

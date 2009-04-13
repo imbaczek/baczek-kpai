@@ -19,6 +19,7 @@
 
 TopLevelAI::TopLevelAI(BaczekKPAI* theai)
 {
+	builderRetreatGoalId = -1;
 	ai = theai;
 	builders = new UnitGroupAI(theai);
 	bases = new UnitGroupAI(theai);
@@ -238,20 +239,38 @@ void TopLevelAI::FindGoals()
 	if (expansionGoals == 0 && !hasRetreat) {
 		// there are no expansions left to take, retreat builders
 		// retreat to one of the bases
+		// unless there are no bases or the group is reasonably close to the base
 		if (!bases->units.empty()) {
+			// TODO move to data file
+			const int maxDist = 40;
+			const int minDist = 10;
+			const int checkOffset = 10;
+			const int checkDist = maxDist+checkOffset;
 			float3 basePos = ai->cb->GetUnitPos(bases->units.begin()->second->owner->id);
-			float3 dest;
-			do {
-				float x = random(0, 2*boost::math::constants::pi<float>());
-				float r = random(SQUARE_SIZE*10, SQUARE_SIZE*40);
-				float3 modDir(sin(x), 0, cos(x));
-				dest = basePos + modDir * r;
-			} while (!dest.IsInBounds());
-			Goal* goal = Goal::GetGoal(Goal::CreateGoal(1, RETREAT));
-			goal->params.push_back(dest);
-			// FIXME move to data file
-			goal->timeoutFrame = ai->cb->GetCurrentFrame() + 30*GAME_SPEED;
-			builders->AddGoal(goal);
+			float3 midPos = builders->GetGroupMidPos();
+			if (midPos.SqDistance2D(basePos) > SQUARE_SIZE*SQUARE_SIZE*checkDist*checkDist) {
+				// not close enough
+				float3 dest;
+				do {
+					float x = random(0, 2*boost::math::constants::pi<float>());
+					float r = random(SQUARE_SIZE*10, SQUARE_SIZE*40);
+					float3 modDir(sin(x), 0, cos(x));
+					dest = basePos + modDir * r;
+				} while (!dest.IsInBounds());
+				Goal* goal = Goal::GetGoal(Goal::CreateGoal(1, RETREAT));
+				goal->params.push_back(dest);
+				// FIXME move constant to data file
+				goal->timeoutFrame = ai->cb->GetCurrentFrame() + 30*GAME_SPEED;
+				builders->AddGoal(goal);
+				builderRetreatGoalId = goal->id;
+			}
+		}
+	} else if (expansionGoals > 0 && hasRetreat) {
+		ailog->info() << "aborting builder RETREAT goal" << std::endl;
+		Goal* retreat = Goal::GetGoal(builderRetreatGoalId);
+		if (retreat) {
+			Goal::RemoveGoal(retreat);
+			builderRetreatGoalId = -1;
 		}
 	}
 
