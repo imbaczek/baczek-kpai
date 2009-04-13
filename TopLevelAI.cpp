@@ -236,6 +236,9 @@ void TopLevelAI::FindGoals()
 		}
 	}
 	assert(expansionGoals >= 0);
+	if (expansionGoals == 0) {
+		ailog->info() << "no expansion goals found" << std::endl;
+	}
 	if (expansionGoals == 0 && !hasRetreat) {
 		// there are no expansions left to take, retreat builders
 		// retreat to one of the bases
