@@ -233,7 +233,7 @@ void BaczekKPAI::Update()
 
 	if ((frame % 30) == 0) {
 		DumpStatus();
-	} else if ((frame % 30) == 15) {
+	} else if ((frame % 30) == 1) {
 		influence->Update(friends, allEnemies);
 	}
 	python->GameFrame(frame);
