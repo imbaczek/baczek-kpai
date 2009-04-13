@@ -145,7 +145,7 @@ void UnitAI::OwnerKilled()
 	currentGoal = 0;
 	BOOST_FOREACH(int gid, goals) {
 		Goal* g = Goal::GetGoal(gid);
-		if (g)
+		if (g && !g->is_finished())
 			g->abort();
 	}
 	owner = 0;
