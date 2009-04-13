@@ -159,6 +159,7 @@ void UnitGroupAI::RemoveUnit(Unit* unit)
 {
 	assert(unit);
 	units.erase(unit->id);
+	usedUnits.erase(unit->id);
 }
 
 /// if unitdef is NULL, "assembler" is used
