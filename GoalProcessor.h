@@ -39,11 +39,8 @@ public:
 		return Goal::GetGoal(id);
 	}
 	
-	virtual void ProcessGoalStack()
+	virtual void ProcessGoalStack(int frameNum)
 	{
-		GoalStack todel;
-		todel.reserve(goals.size());
-
 		BOOST_REVERSE_FOREACH(int gid, goals) {
 			Goal* g = Goal::GetGoal(gid);
 			if (g) {
@@ -55,29 +52,20 @@ public:
 						break;
 					case PROCESS_POP_BREAK:
 						// goal will be aborted later
-						todel.push_back(gid);
+						Goal::RemoveGoal(g);
 						goto end;
 					case PROCESS_POP_CONTINUE:
 						// goal will be aborted later
-						todel.push_back(gid);
+						Goal::RemoveGoal(g);
 						break;
 				}
 			}
 		}
 end:
-		// slow?
-		BOOST_FOREACH(int gid, todel) {
-			GoalStack::iterator it = std::find(goals.begin(), goals.end(), gid);
-			if (it != goals.end()) {
-				Goal* g = Goal::GetGoal(*it);
-				if (g && !g->is_finished())
-					g->abort();
-				goals.erase(it);
-			}
-		}
+		CleanupGoals(frameNum);
 	}
 
-	virtual void CleanupGoals();
+	virtual void CleanupGoals(int frameNum);
 
 	virtual goal_process_t ProcessGoal(Goal *g) = 0;
 	virtual void Update() = 0;

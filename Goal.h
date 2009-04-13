@@ -45,6 +45,7 @@ public:
 		priority = 0;
 		type = NO_TYPE;
 		parent = -1;
+		timeoutFrame = -1;
 	}
 
 	Goal(int priority, Type type)
@@ -54,6 +55,7 @@ public:
 		this->priority = priority;
 		this->type = type;
 		parent = -1;
+		timeoutFrame = -1;
 	}
 
 	~Goal() {};
@@ -79,7 +81,8 @@ public:
 	int id;
 	int priority;
 	int flags;
-	int parent;
+	int parent; //<! parent goal id
+	int timeoutFrame; //<! -1 == never timeout
 	Type type;
 	param_vector params;
 	std::vector<int> nextGoals;

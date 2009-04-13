@@ -135,8 +135,7 @@ void UnitAI::Update()
 
 	if (frameNum % 30 == 0) {
 		std::sort(goals.begin(), goals.end(), goal_priority_less());
-		ProcessGoalStack();
-		CleanupGoals();
+		ProcessGoalStack(frameNum);
 	}
 }
 

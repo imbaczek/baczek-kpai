@@ -38,8 +38,7 @@ void TopLevelAI::Update()
 		FindGoals();
 	}
 	if (frameNum % 30 == 0) {
-		ProcessGoalStack();
-		CleanupGoals();
+		ProcessGoalStack(frameNum);
 	}
 
 	// update unit groups
@@ -250,6 +249,8 @@ void TopLevelAI::FindGoals()
 			} while (!dest.IsInBounds());
 			Goal* goal = Goal::GetGoal(Goal::CreateGoal(1, RETREAT));
 			goal->params.push_back(dest);
+			// FIXME move to data file
+			goal->timeoutFrame = ai->cb->GetCurrentFrame() + 30*GAME_SPEED;
 			builders->AddGoal(goal);
 		}
 	}
