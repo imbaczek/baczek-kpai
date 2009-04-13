@@ -63,4 +63,6 @@ public:
 	void RemoveUnit(Unit* unit);
 
 	float SqDistanceClosestUnit(const float3& pos, int* unit, const UnitDef* unitdef);
+
+	float3 GetGroupMidPos();
 };

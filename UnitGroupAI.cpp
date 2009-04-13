@@ -144,6 +144,10 @@ void UnitGroupAI::Update()
 	}
 }
 
+
+////////////////////////////////////////////////////////////////////
+// unit stuff
+
 void UnitGroupAI::AssignUnit(Unit* unit)
 {
 	assert(unit);
@@ -161,6 +165,9 @@ void UnitGroupAI::RemoveUnit(Unit* unit)
 	units.erase(unit->id);
 	usedUnits.erase(unit->id);
 }
+
+////////////////////////////////////////////////////////////////////
+// utils
 
 /// if unitdef is NULL, "assembler" is used
 float UnitGroupAI::SqDistanceClosestUnit(const float3& pos, int* unit, const UnitDef* unitdef)
@@ -189,4 +196,15 @@ float UnitGroupAI::SqDistanceClosestUnit(const float3& pos, int* unit, const Uni
 	if (unit)
 		*unit = found_uid;
 	return min;
+}
+
+
+float3 UnitGroupAI::GetGroupMidPos()
+{
+	float3 pos(0, 0, 0);
+	for (UnitAISet::iterator it = units.begin(); it != units.end(); ++it) {
+		pos += ai->cb->GetUnitPos(it->first);
+	}
+	pos /= (float)units.size();
+	return pos;
 }
