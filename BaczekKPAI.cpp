@@ -139,7 +139,7 @@ void BaczekKPAI::UnitFinished(int unit)
 	ailog->info() << "unit finished: " << unit << std::endl;
 
 	assert(unitTable[unit]);
-	unitTable[unit]->OnComplete();
+	unitTable[unit]->complete();
 	toplevel->AssignUnitToGroup(unitTable[unit]);
 }
 
@@ -151,7 +151,7 @@ void BaczekKPAI::UnitDestroyed(int unit,int attacker)
 	assert(unitTable[unit]);
 	Unit* tmp = unitTable[unit];
 	unitTable[unit] = 0;
-	tmp->OnDestroy(attacker);
+	tmp->destroy(attacker);
 	delete tmp;
 }
 

@@ -22,8 +22,8 @@ public:
 	boost::shared_ptr<UnitAI> ai;
 
 	// unit status flags
-	bool complete;
-	bool killed;
+	bool is_complete;
+	bool is_killed;
 
 	// unit type flags
 	bool is_constructor;
@@ -32,13 +32,13 @@ public:
 	// unit state flags
 	bool is_producing;
 
-	Unit(BaczekKPAI* g_ai, int id) : global_ai(g_ai), id(id), complete(false), killed(false),
+	Unit(BaczekKPAI* g_ai, int id) : global_ai(g_ai), id(id), is_complete(false), is_killed(false),
 		is_producing(false)
 	{ Init(); }
 	~Unit() {}
 
-	void OnComplete() { complete = true; }
-	void OnDestroy(int attacker) { killed = true; }
+	void complete() { is_complete = true; }
+	void destroy(int attacker) { is_killed = true; if (ai) ai->OwnerKilled(); }
 	
 	// FIXME move to data file
 	static bool IsConstructor(const UnitDef* ud) { return ud->name == "assembler" || ud->name == "gateway" || ud->name == "trojan"; }

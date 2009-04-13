@@ -53,6 +53,8 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 				assert(unit);
 				if (unit->is_producing)
 					continue;
+				if (!unit->is_constructor)
+					continue;
 				if (usedUnits.find(unit->id) != usedUnits.end())
 					continue;
 				if (usedGoals.find(goal->id) != usedGoals.end())
@@ -86,6 +88,39 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 				break;
 			}
 			return PROCESS_CONTINUE;
+
+		case RETREAT:
+			if (goal->params.empty())
+				return PROCESS_POP_CONTINUE;
+
+			BOOST_FOREACH(UnitAISet::value_type& v, units) {
+				UnitAIPtr uai = v.second;
+				Unit* unit = uai->owner;
+				assert(unit);
+				if (usedUnits.find(unit->id) != usedUnits.end())
+					continue;
+				usedUnits.insert(unit->id);
+
+				Goal *g = Goal::GetGoal(Goal::CreateGoal(1, RETREAT));
+				assert(g);
+				g->parent = goal->id;
+				g->params.push_back(goal->params[0]);
+
+				// behaviour when parent goal changes
+				goal->OnAbort(AbortGoal(*g)); // abort subgoal
+				goal->OnComplete(CompleteGoal(*g)); // complete subgoal
+
+				// behaviour when subgoal changes
+				// remove marks
+				g->OnComplete(RemoveUsedUnit(*this, unit->id));
+				// order matters!
+				g->OnComplete(IfUsedUnitsEmpty(*this, CompleteGoal(*goal)));
+				g->OnAbort(RemoveUsedUnit(*this, unit->id));
+				g->OnStart(StartGoal(*goal));
+				uai->AddGoal(g);
+			}
+			return PROCESS_BREAK;
+
 		default:
 			return PROCESS_POP_CONTINUE;
 	}

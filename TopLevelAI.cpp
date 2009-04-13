@@ -207,13 +207,18 @@ void TopLevelAI::FindGoals()
 
 	// filter out goals on bad spots
 	// also check if there are BUILD_EXPANSION goals at all
+	// if there are none, issue a RETREAT goal
 	int expansionGoals = 0;
+	bool hasRetreat = false;
 	BOOST_FOREACH(int gid, goals) {
 		Goal* goal = Goal::GetGoal(gid);
 		if (!goal)
 			continue;
-		if (goal->type != BUILD_EXPANSION)
+		if (goal->type != BUILD_EXPANSION) {
+			if (goal->type == RETREAT)
+				hasRetreat = true;
 			continue;
+		}
 		++expansionGoals;
 		if (skippedGoals.find(gid) != skippedGoals.end())
 			continue;
@@ -231,7 +236,7 @@ void TopLevelAI::FindGoals()
 		}
 	}
 	assert(expansionGoals >= 0);
-	if (expansionGoals == 0) {
+	if (expansionGoals == 0 && !hasRetreat) {
 		// there are no expansions left to take, retreat builders
 		// retreat to one of the bases
 		if (!bases->units.empty()) {
@@ -239,7 +244,7 @@ void TopLevelAI::FindGoals()
 			float3 dest;
 			do {
 				float x = random(0, 2*boost::math::constants::pi<float>());
-				float r = random(SQUARE_SIZE*4, SQUARE_SIZE*10);
+				float r = random(SQUARE_SIZE*10, SQUARE_SIZE*40);
 				float3 modDir(sin(x), 0, cos(x));
 				dest = basePos + modDir * r;
 			} while (!dest.IsInBounds());

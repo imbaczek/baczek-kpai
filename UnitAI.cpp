@@ -82,6 +82,7 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 			goal->start();
 			break;
 		}
+
 		case BUILD_CONSTRUCTOR: {
 			if (!owner->is_base) {
 				ailog->error() << "BUILD_CONSTRUCTOR issued to non-base unit" << std::endl;
@@ -97,6 +98,30 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 			goal->complete();
 			return PROCESS_BREAK;
 		}
+
+		case MOVE:
+		case RETREAT: {
+			if (goal->params.empty()) {
+				ailog->error() << "no params on RETREAT or MOVE goal" << std::endl;
+				return PROCESS_POP_CONTINUE;
+			}
+			float3* param = boost::get<float3>(&goal->params[0]);
+			if (!param) {
+				ailog->error() << "invalid param on RETREAT or MOVE goal" << std::endl;
+				return PROCESS_POP_CONTINUE;
+			}
+			Command c;
+			c.id = CMD_MOVE;
+			// TODO formation offset
+			c.AddParam(param->x);
+			c.AddParam(param->y);
+			c.AddParam(param->z);
+			ai->cb->GiveOrder(owner->id, &c);
+			goal->start();
+			
+			return PROCESS_BREAK;
+		}
+
 		default:
 			return PROCESS_POP_CONTINUE;
 	}
@@ -118,6 +143,13 @@ void UnitAI::Update()
 
 void UnitAI::OwnerKilled()
 {
+	currentGoal = 0;
+	BOOST_FOREACH(int gid, goals) {
+		Goal* g = Goal::GetGoal(gid);
+		if (g)
+			g->abort();
+	}
+	owner = 0;
 }
 
 

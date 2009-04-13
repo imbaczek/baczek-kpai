@@ -3,6 +3,7 @@
 #include <map>
 #include <set>
 #include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
 
 #include "float3.h"
 
@@ -40,6 +41,17 @@ public:
 		int goalId;
 		RemoveUsedGoal(UnitGroupAI& s, int gid):self(s), goalId(gid) {}
 		void operator()(Goal& g) { self.usedGoals.erase(goalId); }
+	};
+
+	struct IfUsedUnitsEmpty : std::unary_function<Goal&, void> {
+		UnitGroupAI& self;
+		boost::function<void (Goal&)> func;
+		IfUsedUnitsEmpty(UnitGroupAI& s, const boost::function<void (Goal&)>& f) : self(s), func(f) {}
+		void operator()(Goal& other) {
+			if (self.usedUnits.empty()) {
+				func(other);
+			}
+		}
 	};
 
 	float3 rallyPoint;

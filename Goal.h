@@ -207,19 +207,46 @@ inline void Goal::RemoveGoal(Goal* g)
 
 
 struct AbortGoal : public std::unary_function<Goal&, void> {
-	Goal& self;
-	AbortGoal(Goal& s):self(s) {}
-	void operator()(Goal& other) { ailog->info() << "AbortGoal(" << self.id << ")" << std::endl; if (!self.is_finished()) self.abort(); }
+	int goalId;
+	AbortGoal(Goal& s):goalId(s.id) {}
+	void operator()(Goal& other) {
+		Goal* self = Goal::GetGoal(goalId);
+		if (!self) {
+			ailog->error() << "AbortGoal: goal not found: " << goalId << std::endl;
+			return;
+		}
+		ailog->info() << "AbortGoal(" << self->id << ")" << std::endl;
+		if (!self->is_finished())
+			self->abort();
+	}
 };
 
 struct CompleteGoal : public std::unary_function<Goal&, void> {
-	Goal& self;
-	CompleteGoal(Goal& s):self(s) {}
-	void operator()(Goal& other) { ailog->info() << "CompleteGoal(" << self.id << ")" << std::endl; if (!self.is_finished()) self.complete(); }
+	int goalId;
+	CompleteGoal(Goal& s):goalId(s.id) {}
+	void operator()(Goal& other) {
+		Goal* self = Goal::GetGoal(goalId);
+		if (!self) {
+			ailog->error() << "CompleteGoal: goal not found: " << goalId << std::endl;
+			return;
+		}
+		ailog->info() << "CompleteGoal(" << self->id << ")" << std::endl;
+		if (!self->is_finished())
+			self->complete();
+	}
 };
 
 struct StartGoal : public std::unary_function<Goal&, void> {
-	Goal& self;
-	StartGoal(Goal& s):self(s) {}
-	void operator()(Goal& other) { ailog->info() << "StartGoal(" << self.id << ")" << std::endl; if (!self.is_executing()) self.start(); }
+	int goalId;
+	StartGoal(Goal& s):goalId(s.id) {}
+	void operator()(Goal& other) {
+		Goal* self = Goal::GetGoal(goalId);
+		if (!self) {
+			ailog->error() << "StartGoal: goal not found: " << goalId << std::endl;
+			return;
+		}
+		ailog->info() << "StartGoal(" << self->id << ")" << std::endl;
+		if (!self->is_finished())
+			self->start();
+	}
 };
