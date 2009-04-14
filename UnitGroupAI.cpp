@@ -104,6 +104,7 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 				Goal *g = Goal::GetGoal(Goal::CreateGoal(1, RETREAT));
 				assert(g);
 				g->parent = goal->id;
+				g->timeoutFrame = goal->timeoutFrame;
 				g->params.push_back(goal->params[0]);
 
 				// behaviour when parent goal changes
