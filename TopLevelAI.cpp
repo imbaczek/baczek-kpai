@@ -138,6 +138,7 @@ void TopLevelAI::FindGoals()
 					|| ud->name == "terminal" || ud->name == "firewall" || ud->name == "obelisk"
 					|| ud->name == "kernel" || ud->name == "carrier" || ud->name == "hole") {
 				badspot = true;
+				ailog->info() << "found blocking " << ud->name << " at  " << ai->cheatcb->GetUnitPos(id) << std::endl;
 				break;
 			}
 		}
@@ -151,8 +152,10 @@ void TopLevelAI::FindGoals()
 		// TODO priority should be a function of distance and risk
 		float minDistance = bases->SqDistanceClosestUnit(geo, 0, 0);
 		// can't reach
-		if (minDistance < 0)
+		if (minDistance < 0) {
+			ailog->info() << "can't reach geo at " << geo << std::endl;
 			continue;
+		}
 
 		int influence = ai->influence->GetAtXY(geo.x, geo.z);
 		// TODO make constant configurable

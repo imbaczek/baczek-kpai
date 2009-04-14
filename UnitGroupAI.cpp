@@ -189,7 +189,7 @@ float UnitGroupAI::SqDistanceClosestUnit(const float3& pos, int* unit, const Uni
 		int id = v.first;
 		float3 upos = ai->cb->GetUnitPos(id);
 		float tmp = ai->EstimateSqDistancePF(unitdef, upos, pos);
-		if (tmp < min) {
+		if (tmp < min && tmp >=0) {
 			min = tmp;
 			found_uid = id;
 		}
@@ -197,6 +197,8 @@ float UnitGroupAI::SqDistanceClosestUnit(const float3& pos, int* unit, const Uni
 	
 	if (unit)
 		*unit = found_uid;
+	if (found_uid == -1)
+		min = -1;
 	return min;
 }
 
