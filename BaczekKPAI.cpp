@@ -399,8 +399,10 @@ float BaczekKPAI::EstimateSqDistancePF(const UnitDef* unitdef, const float3& sta
 		
 		// y == -1 means no path or end of path
 		if (cur.y < 0) {
-			if (cur.x < 0 || cur.z < 0) // error
+			if (cur.x < 0 || cur.z < 0) { // error
+				cb->FreePath(pathId);
 				return -1;
+			}
 			else {
 				// last waypoint reached
 				sqdist += cur.SqDistance2D(end);
