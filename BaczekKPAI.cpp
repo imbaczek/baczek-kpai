@@ -189,6 +189,8 @@ void BaczekKPAI::EnemyDestroyed(int enemy,int attacker)
 void BaczekKPAI::UnitIdle(int unit)
 {
 	Unit* u = GetUnit(unit);
+	assert(u);
+	u->last_idle_frame = cb->GetCurrentFrame();
 	if (u->ai)
 		u->ai->CompleteCurrentGoal();
 

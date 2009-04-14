@@ -33,6 +33,11 @@ void TopLevelAI::Update()
 {
 	int frameNum = ai->cb->GetCurrentFrame();
 
+	// check if builder's rally point is ok
+	if (builders->rallyPoint.x < 0 && !bases->units.empty()) {
+		builders->rallyPoint = random_offset_pos(ai->cb->GetUnitPos(bases->units.begin()->first), SQUARE_SIZE*10, SQUARE_SIZE*40);
+	}
+
 	if (frameNum % 300 == 1) {
 		FindGoals();
 	}
@@ -42,6 +47,9 @@ void TopLevelAI::Update()
 
 	// update unit groups
 	builders->Update();
+	if (frameNum %30 == 1) {
+		builders->RetreatUnusedUnits();
+	}
 	bases->Update();
 	BOOST_FOREACH(UnitGroupAI& it, groups) {
 		it.Update();

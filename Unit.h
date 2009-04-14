@@ -32,6 +32,9 @@ public:
 	// unit state flags
 	bool is_producing;
 
+	// last idle state
+	int last_idle_frame;
+
 	Unit(BaczekKPAI* g_ai, int id) : global_ai(g_ai), id(id), is_complete(false), is_killed(false),
 		is_producing(false)
 	{ Init(); }

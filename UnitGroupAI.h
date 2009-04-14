@@ -17,7 +17,7 @@ class BaczekKPAI;
 class UnitGroupAI : public GoalProcessor
 {
 public:
-	UnitGroupAI(BaczekKPAI *theai) : ai(theai) {};
+	UnitGroupAI(BaczekKPAI *theai) : ai(theai), rallyPoint(-1, -1, -1) {};
 	~UnitGroupAI() {};
 
 	BaczekKPAI* ai;
@@ -65,4 +65,7 @@ public:
 	float SqDistanceClosestUnit(const float3& pos, int* unit, const UnitDef* unitdef);
 
 	float3 GetGroupMidPos();
+
+	void RetreatUnusedUnits();
+	Goal* CreateRetreatGoal(UnitAI& uai, int timeoutFrame);
 };

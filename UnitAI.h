@@ -13,7 +13,7 @@ public:
 
 	Unit* owner;
 	BaczekKPAI* ai;
-	Goal* currentGoal;
+	int currentGoalId;
 
 	goal_process_t ProcessGoal(Goal* g);
 	void Update();

@@ -97,31 +97,34 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 			if (goal->params.empty())
 				return PROCESS_POP_CONTINUE;
 
+			// may throw
+			rallyPoint = boost::get<float3>(goal->params[0]);
+
 			BOOST_FOREACH(UnitAISet::value_type& v, units) {
 				UnitAIPtr uai = v.second;
 				Unit* unit = uai->owner;
 				assert(unit);
 				if (usedUnits.find(unit->id) != usedUnits.end())
 					continue;
+				if (uai->HaveGoalType(RETREAT))
+					continue;
 				usedUnits.insert(unit->id);
 
-				Goal *g = Goal::GetGoal(Goal::CreateGoal(1, RETREAT));
-				assert(g);
+				ailog->info() << "gave " << unit->id << " RETREAT to " << rallyPoint << std::endl;
+				Goal* g = CreateRetreatGoal(*uai, goal->timeoutFrame);
 				g->parent = goal->id;
-				g->timeoutFrame = goal->timeoutFrame;
-				g->params.push_back(goal->params[0]);
+				// behaviour when subgoal changes
+				// remove marks
+				g->OnComplete(RemoveUsedUnit(*this, unit->id));
+				// order matters!
+				g->OnAbort(RemoveUsedUnit(*this, unit->id));
+				g->OnComplete(IfUsedUnitsEmpty(*this, CompleteGoal(*goal)));
+				g->OnStart(StartGoal(*goal));
 
 				// behaviour when parent goal changes
 				goal->OnAbort(AbortGoal(*g)); // abort subgoal
 				goal->OnComplete(CompleteGoal(*g)); // complete subgoal
 
-				// behaviour when subgoal changes
-				// remove marks
-				g->OnComplete(RemoveUsedUnit(*this, unit->id));
-				// order matters!
-				g->OnComplete(IfUsedUnitsEmpty(*this, CompleteGoal(*goal)));
-				g->OnAbort(RemoveUsedUnit(*this, unit->id));
-				g->OnStart(StartGoal(*goal));
 				uai->AddGoal(g);
 			}
 			return PROCESS_BREAK;
@@ -170,6 +173,43 @@ void UnitGroupAI::RemoveUnit(Unit* unit)
 	assert(unit);
 	units.erase(unit->id);
 	usedUnits.erase(unit->id);
+}
+
+
+void UnitGroupAI::RetreatUnusedUnits()
+{
+	if (!rallyPoint.IsInBounds()) {
+		ailog->info() << "cannot retreat unit group, rally point not set" << std::endl;
+		return;
+	}
+
+	for (std::set<int>::iterator it = usedUnits.begin(); it != usedUnits.end(); ++it) {
+		ailog->info() << (*it) << " is used" << std::endl;
+	}
+
+	for (UnitAISet::iterator it = units.begin(); it != units.end(); ++it) {
+		if (usedUnits.find(it->first) == usedUnits.end()	// unit not used
+			&& it->second->owner							// and exists
+			&& it->second->owner->last_idle_frame + 30 < ai->cb->GetCurrentFrame()	// for a while
+			&& rallyPoint.SqDistance2D(ai->cb->GetUnitPos(it->first)) < 10*SQUARE_SIZE*SQUARE_SIZE // and not close to rally point
+			&& !it->second->HaveGoalType(RETREAT)) {	 // and doesn't have a retreat goal
+			// unit is not used
+			ailog->info() << "retreating unused " << it->first << std::endl;
+			Goal* newgoal = CreateRetreatGoal(*it->second, 15*GAME_SPEED);
+			it->second->AddGoal(newgoal);
+		}
+	}
+}
+
+
+Goal* UnitGroupAI::CreateRetreatGoal(UnitAI &uai, int timeoutFrame)
+{
+	Unit* unit = uai.owner;
+	Goal *g = Goal::GetGoal(Goal::CreateGoal(1, RETREAT));
+	assert(g);
+	g->timeoutFrame = timeoutFrame;
+	g->params.push_back(random_offset_pos(rallyPoint, 0, SQUARE_SIZE*10));
+	return g;
 }
 
 ////////////////////////////////////////////////////////////////////

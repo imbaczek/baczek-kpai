@@ -69,6 +69,16 @@ end:
 	virtual void CleanupGoals(int frameNum);
 	void DumpGoalStack(std::string str);
 
+	bool HaveGoalType(Type type) {
+		for (GoalStack::iterator it = goals.begin(); it != goals.end(); ++it) {
+			Goal* g = Goal::GetGoal(*it);
+			if (g && g->type == type) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	virtual goal_process_t ProcessGoal(Goal *g) = 0;
 	virtual void Update() = 0;
 };

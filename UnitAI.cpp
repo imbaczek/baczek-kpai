@@ -4,7 +4,7 @@
 #include "UnitAI.h"
 #include "Goal.h"
 
-UnitAI::UnitAI(BaczekKPAI* ai, Unit* owner): owner(owner), ai(ai), currentGoal(0)
+UnitAI::UnitAI(BaczekKPAI* ai, Unit* owner): owner(owner), ai(ai), currentGoalId(-1)
 {
 }
 
@@ -36,7 +36,7 @@ bool operator==(const UnitAI& a, const UnitAI& b)
 struct on_complete_clean_current_goal : std::unary_function<Goal&, void> {
 	UnitAI* ai;
 	on_complete_clean_current_goal(UnitAI* uai):ai(uai) {}
-	void operator()(Goal& goal) { ai->currentGoal = 0; ailog->info() << "cleaning currentGoal on " << ai->owner->id << std::endl; }
+	void operator()(Goal& goal) { ai->currentGoalId = -1; ailog->info() << "cleaning currentGoal on " << ai->owner->id << std::endl; }
 };
 
 struct on_complete_clean_producing : std::unary_function<Goal&, void> {
@@ -56,11 +56,18 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 		return PROCESS_POP_CONTINUE;
 	}
 
+	if (currentGoalId >= 0) {
+		Goal* current = Goal::GetGoal(currentGoalId);
+		if (current && current->is_executing() && current->priority >= goal->priority) {
+			return PROCESS_BREAK;
+		}
+	}
+
 	if (goal->is_executing()) {
 		return PROCESS_BREAK;
 	}
 
-	ailog->info() << "unit " << owner->id << " executing goal " << goal->id << " type " << goal->type << std::endl;
+	ailog->info() << "EXECUTE GOAL: Unit " << owner->id << " executing goal " << goal->id << " type " << goal->type << std::endl;
 
 	switch (goal->type) {
 		case BUILD_EXPANSION: {
@@ -79,9 +86,9 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 			ai->cb->GiveOrder(owner->id, &c);
 			goal->OnComplete(on_complete_clean_current_goal(this));
 			goal->OnComplete(on_complete_clean_producing(this->owner));
-			currentGoal = goal;
 			owner->is_producing = true;
 			goal->start();
+			currentGoalId = goal->id;
 			break;
 		}
 
@@ -120,6 +127,7 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 			c.AddParam(param->z);
 			ai->cb->GiveOrder(owner->id, &c);
 			goal->start();
+			currentGoalId = goal->id;
 			
 			return PROCESS_BREAK;
 		}
@@ -145,7 +153,7 @@ void UnitAI::Update()
 
 void UnitAI::OwnerKilled()
 {
-	currentGoal = 0;
+	currentGoalId = -1;
 	BOOST_FOREACH(int gid, goals) {
 		Goal* g = Goal::GetGoal(gid);
 		if (g && !g->is_finished())
@@ -207,7 +215,12 @@ int UnitAI::FindConstructorUnitDefId()
 
 void UnitAI::CompleteCurrentGoal()
 {
-	if (currentGoal && !currentGoal->is_finished())
-		currentGoal->complete();
+	if (currentGoalId >= 0) {
+		Goal* currentGoal = Goal::GetGoal(currentGoalId);
+		if (currentGoal && !currentGoal->is_finished()) {
+			currentGoal->complete();
+		}
+	}
+	currentGoalId = -1;
 	owner->is_producing = false;
 }
