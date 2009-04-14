@@ -1,6 +1,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/foreach.hpp>
 
+#include "Sim/MoveTypes/MoveInfo.h"
+
 #include "Log.h"
 #include "BaczekKPAI.h"
 #include "Unit.h"
@@ -193,10 +195,12 @@ float UnitGroupAI::SqDistanceClosestUnit(const float3& pos, int* unit, const Uni
 		const float size = std::max(ud->xsize, ud->zsize)*SQUARE_SIZE;
 		float3 upos = ai->cb->GetUnitPos(id);
 		float3 startpos = random_offset_pos(upos, size*1.5, size*2);
-		float tmp = ai->EstimateSqDistancePF(unitdef, upos, pos);
+		float tmp = ai->EstimateSqDistancePF(unitdef, startpos, pos);
 		if (tmp < min && tmp >=0) {
 			min = tmp;
 			found_uid = id;
+		} else if (tmp < 0) {
+			ailog->error() << "can't reach " << pos << " from " << startpos << std::endl;
 		}
 	}
 	
