@@ -115,10 +115,25 @@ GoalProcessor::goal_process_t TopLevelAI::ProcessGoal(Goal* g)
 	return PROCESS_CONTINUE;
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+// finding goals
+//////////////////////////////////////////////////////////////////////////////////////
+
+
+/// high-level routine
 void TopLevelAI::FindGoals()
 {
 	std::vector<float3> badSpots;
+	FindGoalsExpansion(badSpots); // badSpots gets modified here
+	FindGoalsRetreatBuilders(badSpots); // and used here
 
+	FindGoalsBuildConstructors();
+}
+
+/// find suitable expansion spots
+/// also find spots that can't be expanded on, return them in badSpots
+void TopLevelAI::FindGoalsExpansion(std::vector<float3>& badSpots)
+{
 	// find free geo spots to build expansions on
 	ailog->info() << "FindGoal() expansions" << std::endl;
 	BOOST_FOREACH(float3 geo, ai->geovents) {
@@ -127,6 +142,7 @@ void TopLevelAI::FindGoals()
 		ai->GetAllUnitsInRadius(stuff, geo, 8);
 		bool badspot = false;
 		BOOST_FOREACH(int id, stuff) {
+			// TODO switch to CanBuildAt?
 			const UnitDef* ud = ai->cheatcb->GetUnitDef(id);
 			bool alive = ai->cheatcb->GetUnitHealth(id) > 0;
 			assert(alive);
@@ -157,8 +173,10 @@ void TopLevelAI::FindGoals()
 
 		int influence = ai->influence->GetAtXY(geo.x, geo.z);
 		// TODO make constant configurable
-		if (influence < 0)
+		if (influence < 0) {
+			ailog->info() << "too risky to build an expansion at " << geo << std::endl;
 			continue;
+		}
 
 		// TODO make constant configurable
 		float k = 100;
@@ -207,7 +225,12 @@ void TopLevelAI::FindGoals()
 			AddGoal(g);
 		}
 	}
+}
 
+/// remove BUILD_EXPANSION goals that are placed on spots which are now bad
+/// also, when there are no spots left to build on, retreat whole builder group
+void TopLevelAI::FindGoalsRetreatBuilders(std::vector<float3>& badSpots)
+{
 	// filter out goals on bad spots
 	// also check if there are BUILD_EXPANSION goals at all
 	// if there are none, issue a RETREAT goal
@@ -238,10 +261,12 @@ void TopLevelAI::FindGoals()
 			}
 		}
 	}
+	
 	assert(expansionGoals >= 0);
 	if (expansionGoals == 0) {
 		ailog->info() << "no expansion goals found" << std::endl;
 	}
+	// retreat if needed
 	if (expansionGoals == 0 && !hasRetreat) {
 		// there are no expansions left to take, retreat builders
 		// retreat to one of the bases
@@ -266,6 +291,7 @@ void TopLevelAI::FindGoals()
 			}
 		}
 	} else if (expansionGoals > 0 && hasRetreat) {
+		// retreat should be aborted due to new construction goal
 		ailog->info() << "aborting builder RETREAT goal" << std::endl;
 		Goal* retreat = Goal::GetGoal(builderRetreatGoalId);
 		if (retreat) {
@@ -273,7 +299,11 @@ void TopLevelAI::FindGoals()
 			builderRetreatGoalId = -1;
 		}
 	}
+}
 
+/// decides whether to build constructors
+void TopLevelAI::FindGoalsBuildConstructors()
+{
 	/////////////////////////////////////////////////////
 	// count own constructors and BUILD_CONSTRUCTOR goals
 	ailog->info() << "FindGoal() constructors" << std::endl;
@@ -312,6 +342,7 @@ void TopLevelAI::FindGoals()
 
 	std::sort(goals.begin(), goals.end(), goal_priority_less());
 }
+
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////

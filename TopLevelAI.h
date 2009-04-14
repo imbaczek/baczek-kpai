@@ -29,4 +29,7 @@ public:
 	void AssignUnitToGroup(Unit* unit);
 	void FindGoals();
 
+	void FindGoalsExpansion(std::vector<float3>& badSpots);
+	void FindGoalsRetreatBuilders(std::vector<float3>& badSpots);
+	void FindGoalsBuildConstructors();
 };
