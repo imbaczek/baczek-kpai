@@ -1,6 +1,12 @@
+#include <cmath>
 #include <boost/random.hpp>
+#include <boost/math/constants/constants.hpp>
+
+#include "float3.h"
 
 #include "RNG.h"
+
+using namespace std;
 
 static boost::mt19937 rng;                 
 
@@ -26,4 +32,22 @@ int randint(int start, int end)
 	boost::variate_generator<boost::mt19937&, boost::uniform_int<> >
 		 gimme_random(rng, rnd);
 	return gimme_random();
+}
+
+float3 random_direction()
+{
+	float x = random(0, 2*boost::math::constants::pi<float>());
+	return float3(sin(x), 0, cos(x));
+}
+
+
+float3 random_offset_pos(const float3& basePos, float minoffset, float maxoffset)
+{
+	float3 dest;
+	do {
+		float r = random(minoffset, maxoffset);
+		float3 modDir = random_direction();
+		dest = basePos + modDir * r;
+	} while (!dest.IsInBounds());
+	return dest;
 }

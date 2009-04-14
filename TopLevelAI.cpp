@@ -2,8 +2,6 @@
 #include <strstream>
 #include <boost/foreach.hpp>
 #include <cmath>
-#include <boost/math/constants/constants.hpp>
-
 
 #include "ExternalAI/IGlobalAICallback.h"
 #include "ExternalAI/IAICheats.h"
@@ -258,13 +256,7 @@ void TopLevelAI::FindGoals()
 			float3 midPos = builders->GetGroupMidPos();
 			if (midPos.SqDistance2D(basePos) > SQUARE_SIZE*SQUARE_SIZE*checkDist*checkDist) {
 				// not close enough
-				float3 dest;
-				do {
-					float x = random(0, 2*boost::math::constants::pi<float>());
-					float r = random(SQUARE_SIZE*10, SQUARE_SIZE*40);
-					float3 modDir(sin(x), 0, cos(x));
-					dest = basePos + modDir * r;
-				} while (!dest.IsInBounds());
+				float3 dest = random_offset_pos(basePos, SQUARE_SIZE*10, SQUARE_SIZE*40);
 				Goal* goal = Goal::GetGoal(Goal::CreateGoal(1, RETREAT));
 				goal->params.push_back(dest);
 				// FIXME move constant to data file

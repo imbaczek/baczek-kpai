@@ -7,6 +7,8 @@
 #include "UnitGroupAI.h"
 #include "Goal.h"
 #include "UnitAI.h"
+#include "Rng.h"
+
 
 using boost::shared_ptr;
 
@@ -187,7 +189,10 @@ float UnitGroupAI::SqDistanceClosestUnit(const float3& pos, int* unit, const Uni
 
 	BOOST_FOREACH(const UnitAISet::value_type& v, units) {
 		int id = v.first;
+		const UnitDef* ud = ai->cb->GetUnitDef(id);
+		const float size = std::max(ud->xsize, ud->zsize)*SQUARE_SIZE;
 		float3 upos = ai->cb->GetUnitPos(id);
+		float3 startpos = random_offset_pos(upos, size*1.5, size*2);
 		float tmp = ai->EstimateSqDistancePF(unitdef, upos, pos);
 		if (tmp < min && tmp >=0) {
 			min = tmp;
