@@ -145,7 +145,8 @@ void BaczekKPAI::UnitFinished(int unit)
 
 void BaczekKPAI::UnitDestroyed(int unit,int attacker)
 {
-	ailog->info() << "unit destroyed: " << unit << std::endl;
+	float3 pos = cb->GetUnitPos(unit);
+	ailog->info() << "unit destroyed: " << unit << " at " << pos << std::endl;
 	myUnits.erase(unit);
 
 	assert(unitTable[unit]);
