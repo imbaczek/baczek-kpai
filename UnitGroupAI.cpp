@@ -136,6 +136,7 @@ void UnitGroupAI::Update()
 	if (frameNum % 30 == 0) {
 		usedUnits.clear();
 		std::sort(goals.begin(), goals.end(), goal_priority_less());
+		DumpGoalStack("UnitGroupAI");
 		ProcessGoalStack(frameNum);
 	}
 

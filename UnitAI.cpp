@@ -60,6 +60,8 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 		return PROCESS_BREAK;
 	}
 
+	ailog->info() << "unit " << owner->id << " executing goal " << goal->id << " type " << goal->type << std::endl;
+
 	switch (goal->type) {
 		case BUILD_EXPANSION: {
 			if (!owner->is_constructor) {
@@ -135,6 +137,7 @@ void UnitAI::Update()
 
 	if (frameNum % 30 == 0) {
 		std::sort(goals.begin(), goals.end(), goal_priority_less());
+		DumpGoalStack("Unit");
 		ProcessGoalStack(frameNum);
 	}
 }

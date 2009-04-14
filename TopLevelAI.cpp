@@ -126,10 +126,12 @@ void TopLevelAI::FindGoals()
 	BOOST_FOREACH(float3 geo, ai->geovents) {
 		// check if the expansion spot is taken
 		std::vector<int> stuff;
-		ai->GetAllUnitsInRadius(stuff, geo, 32);
+		ai->GetAllUnitsInRadius(stuff, geo, 8);
 		bool badspot = false;
 		BOOST_FOREACH(int id, stuff) {
 			const UnitDef* ud = ai->cheatcb->GetUnitDef(id);
+			bool alive = ai->cheatcb->GetUnitHealth(id) > 0;
+			assert(alive);
 			assert(ud);
 			// TODO make configurable
 			if (ud->name == "socket" || ud->name == "port" || ud->name == "window"

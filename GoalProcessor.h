@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <boost/foreach.hpp>
 
 #include "Goal.h"
@@ -66,6 +67,7 @@ end:
 	}
 
 	virtual void CleanupGoals(int frameNum);
+	void DumpGoalStack(std::string str);
 
 	virtual goal_process_t ProcessGoal(Goal *g) = 0;
 	virtual void Update() = 0;
