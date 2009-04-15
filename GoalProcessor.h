@@ -79,6 +79,26 @@ end:
 		return false;
 	}
 
+	bool HaveGoalType(Type type, int minPriority) {
+		for (GoalStack::iterator it = goals.begin(); it != goals.end(); ++it) {
+			Goal* g = Goal::GetGoal(*it);
+			if (g && g->type == type && g->priority >= minPriority) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void AbortGoals(Type type) {
+		for (GoalStack::iterator it = goals.begin(); it != goals.end(); ++it) {
+			Goal* g = Goal::GetGoal(*it);
+			if (g && g->type == type && !g->is_finished()) {
+				g->abort();
+			}
+		}
+	}
+
+
 	virtual goal_process_t ProcessGoal(Goal *g) = 0;
 	virtual void Update() = 0;
 };

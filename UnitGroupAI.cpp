@@ -106,7 +106,7 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 				assert(unit);
 				if (usedUnits.find(unit->id) != usedUnits.end())
 					continue;
-				if (uai->HaveGoalType(RETREAT))
+				if (uai->HaveGoalType(RETREAT, goal->priority))
 					continue;
 				usedUnits.insert(unit->id);
 
