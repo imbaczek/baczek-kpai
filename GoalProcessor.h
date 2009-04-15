@@ -52,11 +52,11 @@ public:
 					case PROCESS_CONTINUE:
 						break;
 					case PROCESS_POP_BREAK:
-						// goal will be aborted later
+						// goal will be removed later
 						Goal::RemoveGoal(g);
 						goto end;
 					case PROCESS_POP_CONTINUE:
-						// goal will be aborted later
+						// goal will be removed later
 						Goal::RemoveGoal(g);
 						break;
 				}
