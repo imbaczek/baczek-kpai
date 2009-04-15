@@ -153,12 +153,11 @@ void TopLevelAI::FindGoalsExpansion(std::vector<float3>& badSpots)
 			// TODO switch to CanBuildAt?
 			const UnitDef* ud = ai->cheatcb->GetUnitDef(id);
 			bool alive = ai->cheatcb->GetUnitHealth(id) > 0;
-			assert(alive);
 			assert(ud);
 			// TODO make configurable
-			if (ud->name == "socket" || ud->name == "port" || ud->name == "window"
+			if (alive && (ud->name == "socket" || ud->name == "port" || ud->name == "window"
 					|| ud->name == "terminal" || ud->name == "firewall" || ud->name == "obelisk"
-					|| ud->name == "kernel" || ud->name == "carrier" || ud->name == "hole") {
+					|| ud->name == "kernel" || ud->name == "carrier" || ud->name == "hole")) {
 				badspot = true;
 				ailog->info() << "found blocking " << ud->name << " at  " << ai->cheatcb->GetUnitPos(id) << std::endl;
 				break;
@@ -230,6 +229,7 @@ void TopLevelAI::FindGoalsExpansion(std::vector<float3>& badSpots)
 		if (!dontadd) {
 			Goal *g = Goal::GetGoal(Goal::CreateGoal(priority, BUILD_EXPANSION));
 			g->params.push_back(geo);
+			g->timeoutFrame = ai->cb->GetCurrentFrame() + 5*60*GAME_SPEED;
 			AddGoal(g);
 		}
 	}

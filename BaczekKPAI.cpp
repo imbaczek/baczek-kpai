@@ -190,6 +190,7 @@ void BaczekKPAI::UnitIdle(int unit)
 {
 	Unit* u = GetUnit(unit);
 	assert(u);
+	ailog->info() << "unit idle " << unit << std::endl;
 	u->last_idle_frame = cb->GetCurrentFrame();
 	if (u->ai)
 		u->ai->CompleteCurrentGoal();

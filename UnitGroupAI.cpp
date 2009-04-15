@@ -61,6 +61,7 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 					continue;
 				if (usedUnits.find(unit->id) != usedUnits.end())
 					continue;
+				// TODO FIXME used goals aren't freed when units assigned to them die
 				if (usedGoals.find(goal->id) != usedGoals.end())
 					continue;
 				// FIXME move to a data file
@@ -77,6 +78,8 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 				// behaviour when subgoal changes
 				// mark parent as complete
 				g->OnComplete(CompleteGoal(*goal));
+				// do not suspend - risk matrix may have changed
+				g->OnAbort(AbortGoal(*goal));
 				// remove marks
 				g->OnComplete(RemoveUsedUnit(*this, unit->id));
 				g->OnComplete(RemoveUsedGoal(*this, goal->id));
@@ -89,6 +92,8 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 				goal->start();
 				usedUnits.insert(unit->id);
 				usedGoals.insert(goal->id);
+				unit2goal[unit->id] = goal->id;
+				goal2unit[goal->id] = unit->id;
 				break;
 			}
 			return PROCESS_CONTINUE;
@@ -141,7 +146,7 @@ void UnitGroupAI::Update()
 	int frameNum = ai->cb->GetCurrentFrame();
 
 	if (frameNum % 30 == 0) {
-		usedUnits.clear();
+		CheckUnit2Goal();
 		std::sort(goals.begin(), goals.end(), goal_priority_less());
 		DumpGoalStack("UnitGroupAI");
 		ProcessGoalStack(frameNum);
@@ -157,6 +162,12 @@ void UnitGroupAI::Update()
 ////////////////////////////////////////////////////////////////////
 // unit stuff
 
+struct OnKilledHandler : std::unary_function<UnitAI&, void> {
+	UnitGroupAI& self;
+	OnKilledHandler(UnitGroupAI& s):self(s) {}
+	void operator()(UnitAI& uai) { self.RemoveUnitAI(uai); }
+};
+
 void UnitGroupAI::AssignUnit(Unit* unit)
 {
 	assert(unit);
@@ -166,6 +177,8 @@ void UnitGroupAI::AssignUnit(Unit* unit)
 	UnitAIPtr uai = unit->ai;
 	assert(uai);
 	units.insert(UnitAISet::value_type(unit->id, uai));
+	//uai->OnKilled(boost::bind(&UnitGroupAI::RemoveUnitAI, this)); // crashes msvc9 lol
+	uai->OnKilled(OnKilledHandler(*this));
 }
 
 void UnitGroupAI::RemoveUnit(Unit* unit)
@@ -175,6 +188,12 @@ void UnitGroupAI::RemoveUnit(Unit* unit)
 	usedUnits.erase(unit->id);
 }
 
+void UnitGroupAI::RemoveUnitAI(UnitAI& unitAi)
+{
+	assert(unitAi.owner);
+	ailog->info() << "removing unit " << unitAi.owner->id << " from group" << std::endl;
+	RemoveUnit(unitAi.owner);
+}
 
 void UnitGroupAI::RetreatUnusedUnits()
 {
@@ -210,6 +229,31 @@ Goal* UnitGroupAI::CreateRetreatGoal(UnitAI &uai, int timeoutFrame)
 	g->timeoutFrame = timeoutFrame;
 	g->params.push_back(random_offset_pos(rallyPoint, 0, SQUARE_SIZE*10));
 	return g;
+}
+
+bool UnitGroupAI::CheckUnit2Goal()
+{
+#ifdef _DEBUG
+	// check unit2goal
+	for (std::map<int, int>::iterator it = unit2goal.begin(); it != unit2goal.end(); ++it) {
+		Unit* unit = ai->GetUnit(it->first);
+		assert(unit);
+		assert(!unit->is_killed);
+		assert(it->first == goal2unit[it->second]);
+		Goal* unitgoal = Goal::GetGoal(unit->ai->currentGoalId);
+		assert(unitgoal);
+		assert(unitgoal->parent == it->second);
+	}
+	// check goal2unit
+	for (std::map<int, int>::iterator it = goal2unit.begin(); it != goal2unit.end(); ++it) {
+		Goal* goal = Goal::GetGoal(it->first);
+		assert(goal);
+		assert(it->first == unit2goal[it->second]);
+		Unit* unit = ai->GetUnit(it->second);
+		assert(unit);
+	}
+#endif
+	return true;
 }
 
 ////////////////////////////////////////////////////////////////////

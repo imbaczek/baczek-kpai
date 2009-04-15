@@ -10,6 +10,7 @@
 #include "Goal.h"
 #include "GoalProcessor.h"
 #include "UnitAI.h"
+#include "Log.h"
 
 
 class BaczekKPAI;
@@ -28,19 +29,29 @@ public:
 	UnitAISet units;
 	std::set<int> usedUnits;
 	std::set<int> usedGoals;
+	std::map<int, int> unit2goal;
+	std::map<int, int> goal2unit;
 
 	struct RemoveUsedUnit : std::unary_function<Goal&, void> {
 		UnitGroupAI& self;
 		int unitId;
 		RemoveUsedUnit(UnitGroupAI& s, int uid) : self(s), unitId(uid) {}
-		void operator()(Goal& g) { self.usedUnits.erase(unitId); }
+		void operator()(Goal& g) {
+			ailog->info() << "removing used unit " << unitId << std::endl;
+			self.usedUnits.erase(unitId);
+			self.unit2goal.erase(unitId);
+		}
 	};
 
 	struct RemoveUsedGoal : std::unary_function<Goal&, void> {
 		UnitGroupAI& self;
 		int goalId;
 		RemoveUsedGoal(UnitGroupAI& s, int gid):self(s), goalId(gid) {}
-		void operator()(Goal& g) { self.usedGoals.erase(goalId); }
+		void operator()(Goal& g) {
+			ailog->info() << "removing used goal " << goalId << std::endl;
+			self.usedGoals.erase(goalId);
+			self.goal2unit.erase(goalId);
+		}
 	};
 
 	struct IfUsedUnitsEmpty : std::unary_function<Goal&, void> {
@@ -61,6 +72,7 @@ public:
 
 	void AssignUnit(Unit* unit);
 	void RemoveUnit(Unit* unit);
+	void RemoveUnitAI(UnitAI& unitai);
 
 	float SqDistanceClosestUnit(const float3& pos, int* unit, const UnitDef* unitdef);
 
@@ -68,4 +80,5 @@ public:
 
 	void RetreatUnusedUnits();
 	Goal* CreateRetreatGoal(UnitAI& uai, int timeoutFrame);
+	bool CheckUnit2Goal();
 };

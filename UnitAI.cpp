@@ -153,11 +153,14 @@ void UnitAI::Update()
 
 void UnitAI::OwnerKilled()
 {
+	// signal listeners
+	onKilled(*this);
+
 	currentGoalId = -1;
 	BOOST_FOREACH(int gid, goals) {
 		Goal* g = Goal::GetGoal(gid);
-		if (g && !g->is_finished())
-			g->abort();
+		if (g)
+			Goal::RemoveGoal(g);
 	}
 	owner = 0;
 }

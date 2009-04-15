@@ -127,31 +127,31 @@ public:
 	void start() {
 		assert(!is_finished());
 		flags = EXECUTING;
-		ailog->info() << "starting goal " << id << std::endl;
+		ailog->info() << "starting goal " << id << " (parent " << parent << ")" << std::endl;
 		onStart(*this);
 	}
 	void suspend() {
 		assert(!is_finished());
 		flags = SUSPENDED;
-		ailog->info() << "suspending goal " << id << std::endl;
+		ailog->info() << "suspending goal " << id << " (parent " << parent << ")" << std::endl;
 		onSuspend(*this);
 	}
 	void continue_() {
 		assert(!is_finished());
 		flags = EXECUTING;
-		ailog->info() << "continuing goal " << id << std::endl;
+		ailog->info() << "continuing goal " << id << " (parent " << parent << ")" << std::endl;
 		onContinue(*this);
 	}
 	void complete() {
 		assert(!is_finished());
 		flags = FINISHED | COMPLETED;
-		ailog->info() << "completing goal " << id << std::endl;
+		ailog->info() << "completing goal " << id << " (parent " << parent << ")" << std::endl;
 		onComplete(*this);
 	}
 	void abort() {
 		assert(!is_finished());
 		flags = FINISHED | ABORTED;
-		ailog->info() << "aborting goal " << id << std::endl;
+		ailog->info() << "aborting goal " << id << " (parent " << parent << ")" << std::endl;
 		onAbort(*this);
 	}
 
