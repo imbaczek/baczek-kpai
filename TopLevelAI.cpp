@@ -373,3 +373,20 @@ void TopLevelAI::AssignUnitToGroup(Unit* unit)
 	else if (unit->is_constructor)
 		builders->AssignUnit(unit);
 }
+
+void TopLevelAI::HandleExpansionCommands(Unit* expansion)
+{
+	assert(expansion);
+	if (!expansion->ai)
+		expansion->ai.reset(new UnitAI(ai, expansion));
+
+	Command repeat;
+	repeat.id = CMD_REPEAT;
+	repeat.params.push_back(1);
+	Command build;
+	build.id = -expansion->ai->FindSpamUnitDefId();
+	assert(build.id < 0);
+
+	ai->cb->GiveOrder(expansion->id, &repeat);
+	ai->cb->GiveOrder(expansion->id, &build);
+}

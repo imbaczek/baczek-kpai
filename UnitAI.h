@@ -37,6 +37,7 @@ public:
 	// constructor stuff
 	int FindExpansionUnitDefId();
 	int FindConstructorUnitDefId();
+	int FindSpamUnitDefId();
 
 	void CompleteCurrentGoal();
 };

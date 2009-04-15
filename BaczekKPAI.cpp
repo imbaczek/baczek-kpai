@@ -132,6 +132,9 @@ void BaczekKPAI::UnitCreated(int unit)
 
 	assert(!unitTable[unit]);
 	unitTable[unit] = new Unit(this, unit);
+
+	if (unitTable[unit]->is_expansion)
+		toplevel->HandleExpansionCommands(unitTable[unit]);
 }
 
 void BaczekKPAI::UnitFinished(int unit)

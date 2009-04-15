@@ -28,6 +28,7 @@ public:
 	// unit type flags
 	bool is_constructor;
 	bool is_base;
+	bool is_expansion;
 
 	// unit state flags
 	bool is_producing;
@@ -46,4 +47,5 @@ public:
 	// FIXME move to data file
 	static bool IsConstructor(const UnitDef* ud) { return ud->name == "assembler" || ud->name == "gateway" || ud->name == "trojan"; }
 	static bool IsBase(const UnitDef* ud) { return ud->name == "kernel" || ud->name == "hole" || ud->name == "carrier"; }
+	static bool IsExpansion(const UnitDef* ud) { return ud->name == "window" || ud->name == "socket" || ud->name == "port"; }
 };

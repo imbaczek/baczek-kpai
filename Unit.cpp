@@ -11,6 +11,7 @@ void Unit::Init()
 
 	is_constructor = IsConstructor(ud);
 	is_base = IsBase(ud);
+	is_expansion = IsExpansion(ud);
 
 	last_idle_frame = 0;
 }

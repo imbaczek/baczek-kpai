@@ -215,6 +215,29 @@ int UnitAI::FindConstructorUnitDefId()
 	return 0;
 }
 
+// TODO move to a data file
+int UnitAI::FindSpamUnitDefId()
+{
+	assert(owner);
+	const UnitDef *ud = ai->cb->GetUnitDef(owner->id);
+	assert(ud);
+	
+	if (ud->name == "kernel" || ud->name == "socket") {
+		const UnitDef *tobuild = ai->cb->GetUnitDef("bit");
+		assert(tobuild);
+		return tobuild->id;
+	} else if (ud->name == "hole" || ud->name == "window") {
+		const UnitDef *tobuild = ai->cb->GetUnitDef("bug");
+		assert(tobuild);
+		return tobuild->id;
+	} else if (ud->name == "carrier" || ud->name == "port") {
+		const UnitDef *tobuild = ai->cb->GetUnitDef("packet");
+		assert(tobuild);
+		return tobuild->id;
+	}
+	return 0;
+}
+
 
 void UnitAI::CompleteCurrentGoal()
 {
