@@ -24,114 +24,19 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 		case BUILD_CONSTRUCTOR:
 			if (goal->is_executing())
 				return PROCESS_CONTINUE;
-			BOOST_FOREACH(UnitAISet::value_type& v, units) {
-				UnitAIPtr uai = v.second;
-				Unit* unit = uai->owner;
-				assert(unit);
-				if (unit->is_producing)
-					continue;
-				// FIXME move to a data file
-				Goal *g = Goal::GetGoal(Goal::CreateGoal(goal->priority, BUILD_CONSTRUCTOR));
-				assert(g);
-				g->parent = goal->id;
-
-				// behaviour when parent goal changes
-				goal->OnAbort(AbortGoal(*g));
-				goal->OnComplete(CompleteGoal(*g));
-				// behaviour when subgoal changes
-				g->OnComplete(CompleteGoal(*goal));
-
-				ailog->info() << "unit " << unit->id << " assigned to producing a constructor" << std::endl;
-				uai->AddGoal(g);
-				goal->start();
-				break;
-			}
+			ProcessBuildConstructor(goal);
 			return PROCESS_CONTINUE;
+
 		case BUILD_EXPANSION:
 			if (goal->is_executing())
 				return PROCESS_CONTINUE;
-
-			BOOST_FOREACH(UnitAISet::value_type& v, units) {
-				UnitAIPtr uai = v.second;
-				Unit* unit = uai->owner;
-				assert(unit);
-				if (unit->is_producing)
-					continue;
-				if (!unit->is_constructor)
-					continue;
-				if (usedUnits.find(unit->id) != usedUnits.end())
-					continue;
-				// TODO FIXME used goals aren't freed when units assigned to them die
-				if (usedGoals.find(goal->id) != usedGoals.end())
-					continue;
-				// FIXME move to a data file
-				Goal *g = Goal::GetGoal(Goal::CreateGoal(1, BUILD_EXPANSION));
-				assert(g);
-				assert(goal->params.size() >= 1);
-				g->parent = goal->id;
-				g->params.push_back(goal->params[0]);
-
-				// behaviour when parent goal changes
-				goal->OnAbort(AbortGoal(*g)); // abort subgoal
-				goal->OnComplete(CompleteGoal(*g)); // complete subgoal
-
-				// behaviour when subgoal changes
-				// mark parent as complete
-				g->OnComplete(CompleteGoal(*goal));
-				// do not suspend - risk matrix may have changed
-				g->OnAbort(AbortGoal(*goal));
-				// remove marks
-				g->OnComplete(RemoveUsedUnit(*this, unit->id));
-				g->OnComplete(RemoveUsedGoal(*this, goal->id));
-				g->OnAbort(RemoveUsedUnit(*this, unit->id));
-				g->OnAbort(RemoveUsedGoal(*this, goal->id));
-
-				ailog->info() << "unit " << unit->id << " assigned to building an expansion (goal id " << goal->id
-					<< " " << goal->params[0] << ")" << std::endl;
-				uai->AddGoal(g);
-				goal->start();
-				usedUnits.insert(unit->id);
-				usedGoals.insert(goal->id);
-				unit2goal[unit->id] = goal->id;
-				goal2unit[goal->id] = unit->id;
-				break;
-			}
+			ProcessBuildExpansion(goal);
 			return PROCESS_CONTINUE;
 
 		case RETREAT:
 			if (goal->params.empty())
 				return PROCESS_POP_CONTINUE;
-
-			// may throw
-			rallyPoint = boost::get<float3>(goal->params[0]);
-
-			BOOST_FOREACH(UnitAISet::value_type& v, units) {
-				UnitAIPtr uai = v.second;
-				Unit* unit = uai->owner;
-				assert(unit);
-				if (usedUnits.find(unit->id) != usedUnits.end())
-					continue;
-				if (uai->HaveGoalType(RETREAT, goal->priority))
-					continue;
-				usedUnits.insert(unit->id);
-
-				ailog->info() << "gave " << unit->id << " RETREAT to " << rallyPoint << std::endl;
-				Goal* g = CreateRetreatGoal(*uai, goal->timeoutFrame);
-				g->parent = goal->id;
-				// behaviour when subgoal changes
-				// remove marks
-				g->OnComplete(RemoveUsedUnit(*this, unit->id));
-				// order matters!
-				g->OnAbort(RemoveUsedUnit(*this, unit->id));
-				g->OnComplete(IfUsedUnitsEmpty(*this, CompleteGoal(*goal)));
-				g->OnStart(StartGoal(*goal));
-
-				// behaviour when parent goal changes
-				goal->OnAbort(AbortGoal(*g)); // abort subgoal
-				goal->OnComplete(CompleteGoal(*g)); // complete subgoal
-
-				uai->AddGoal(g);
-			}
+			ProcessMove(goal);
 			return PROCESS_BREAK;
 
 		default:
@@ -155,6 +60,131 @@ void UnitGroupAI::Update()
 	// update units
 	BOOST_FOREACH(UnitAISet::value_type& v, units) {
 		v.second->Update();
+	}
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+// goal processing
+
+void UnitGroupAI::ProcessBuildConstructor(Goal* goal)
+{
+	assert(goal);
+	assert(goal->type == BUILD_CONSTRUCTOR);
+	BOOST_FOREACH(UnitAISet::value_type& v, units) {
+		UnitAIPtr uai = v.second;
+		Unit* unit = uai->owner;
+		assert(unit);
+		if (unit->is_producing)
+			continue;
+		// FIXME move to a data file
+		Goal *g = Goal::GetGoal(Goal::CreateGoal(goal->priority, BUILD_CONSTRUCTOR));
+		assert(g);
+		g->parent = goal->id;
+
+		// behaviour when parent goal changes
+		goal->OnAbort(AbortGoal(*g));
+		goal->OnComplete(CompleteGoal(*g));
+		// behaviour when subgoal changes
+		g->OnComplete(CompleteGoal(*goal));
+
+		ailog->info() << "unit " << unit->id << " assigned to producing a constructor" << std::endl;
+		uai->AddGoal(g);
+		goal->start();
+		// unit found, exit loop
+		break;
+	}
+}
+
+
+void UnitGroupAI::ProcessBuildExpansion(Goal* goal)
+{
+	assert(goal);
+	assert(goal->type == BUILD_EXPANSION);
+	BOOST_FOREACH(UnitAISet::value_type& v, units) {
+		UnitAIPtr uai = v.second;
+		Unit* unit = uai->owner;
+		assert(unit);
+		if (unit->is_producing)
+			continue;
+		if (!unit->is_constructor)
+			continue;
+		if (usedUnits.find(unit->id) != usedUnits.end())
+			continue;
+		// TODO FIXME used goals aren't freed when units assigned to them die
+		if (usedGoals.find(goal->id) != usedGoals.end())
+			continue;
+		// FIXME move to a data file
+		Goal *g = Goal::GetGoal(Goal::CreateGoal(1, BUILD_EXPANSION));
+		assert(g);
+		assert(goal->params.size() >= 1);
+		g->parent = goal->id;
+		g->params.push_back(goal->params[0]);
+
+		// behaviour when parent goal changes
+		goal->OnAbort(AbortGoal(*g)); // abort subgoal
+		goal->OnComplete(CompleteGoal(*g)); // complete subgoal
+
+		// behaviour when subgoal changes
+		// mark parent as complete
+		g->OnComplete(CompleteGoal(*goal));
+		// do not suspend - risk matrix may have changed
+		g->OnAbort(AbortGoal(*goal));
+		// remove marks
+		g->OnComplete(RemoveUsedUnit(*this, unit->id));
+		g->OnComplete(RemoveUsedGoal(*this, goal->id));
+		g->OnAbort(RemoveUsedUnit(*this, unit->id));
+		g->OnAbort(RemoveUsedGoal(*this, goal->id));
+
+		ailog->info() << "unit " << unit->id << " assigned to building an expansion (goal id " << goal->id
+			<< " " << goal->params[0] << ")" << std::endl;
+		uai->AddGoal(g);
+		goal->start();
+		usedUnits.insert(unit->id);
+		usedGoals.insert(goal->id);
+		unit2goal[unit->id] = goal->id;
+		goal2unit[goal->id] = unit->id;
+		// unit found, exit loop
+		break;
+	}
+}
+
+
+
+void UnitGroupAI::ProcessMove(Goal* goal)
+{
+	assert(goal);
+	assert(goal->type == MOVE || goal->type == RETREAT);
+
+	// may throw
+	rallyPoint = boost::get<float3>(goal->params[0]);
+
+	BOOST_FOREACH(UnitAISet::value_type& v, units) {
+		UnitAIPtr uai = v.second;
+		Unit* unit = uai->owner;
+		assert(unit);
+		if (usedUnits.find(unit->id) != usedUnits.end())
+			continue;
+		if (uai->HaveGoalType(RETREAT, goal->priority))
+			continue;
+		usedUnits.insert(unit->id);
+
+		ailog->info() << "gave " << unit->id << " RETREAT to " << rallyPoint << std::endl;
+		Goal* g = CreateRetreatGoal(*uai, goal->timeoutFrame);
+		g->parent = goal->id;
+		// behaviour when subgoal changes
+		// remove marks
+		g->OnComplete(RemoveUsedUnit(*this, unit->id));
+		// order matters!
+		g->OnAbort(RemoveUsedUnit(*this, unit->id));
+		g->OnComplete(IfUsedUnitsEmpty(*this, CompleteGoal(*goal)));
+		g->OnStart(StartGoal(*goal));
+
+		// behaviour when parent goal changes
+		goal->OnAbort(AbortGoal(*g)); // abort subgoal
+		goal->OnComplete(CompleteGoal(*g)); // complete subgoal
+
+		uai->AddGoal(g);
 	}
 }
 

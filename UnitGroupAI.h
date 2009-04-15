@@ -70,6 +70,10 @@ public:
 	goal_process_t ProcessGoal(Goal* g);
 	void Update();
 
+	void ProcessBuildExpansion(Goal* g);
+	void ProcessMove(Goal* g);
+	void ProcessBuildConstructor(Goal* g);
+
 	void AssignUnit(Unit* unit);
 	void RemoveUnit(Unit* unit);
 	void RemoveUnitAI(UnitAI& unitai);
