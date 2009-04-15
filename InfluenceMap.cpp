@@ -190,20 +190,20 @@ void InfluenceMap::WriteDefaultJSONConfig(std::string configName) {
 	PUSH_UNIT("port", ud);
 	PUSH_UNIT("firewall", ud);
 	// spam units
-	ud.radius = 384;
+	ud.radius = 512;
 	ud.max_value = 5;
 	PUSH_UNIT("bit", ud);
 	PUSH_UNIT("bug", ud);
 	PUSH_UNIT("exploit", ud);
 	PUSH_UNIT("packet", ud);
 	// heavy units
-	ud.radius = 512;
+	ud.radius = 768;
 	ud.max_value = 40;
 	PUSH_UNIT("byte", ud);
 	PUSH_UNIT("worm", ud);
 	PUSH_UNIT("connection", ud);
 	// arty units
-	ud.radius = 768;
+	ud.radius = 1024;
 	ud.max_value = 20;
 	PUSH_UNIT("pointer", ud);
 	PUSH_UNIT("dos", ud);
