@@ -190,10 +190,10 @@ void UnitGroupAI::RetreatUnusedUnits()
 	for (UnitAISet::iterator it = units.begin(); it != units.end(); ++it) {
 		if (usedUnits.find(it->first) == usedUnits.end()	// unit not used
 			&& it->second->owner							// and exists
-			&& it->second->owner->last_idle_frame + 30 < ai->cb->GetCurrentFrame()	// for a while
-			&& rallyPoint.SqDistance2D(ai->cb->GetUnitPos(it->first)) < 10*SQUARE_SIZE*SQUARE_SIZE // and not close to rally point
+			&& it->second->owner->last_idle_frame + 30 < ai->cb->GetCurrentFrame()	// and is idle for a while
+			&& rallyPoint.SqDistance2D(ai->cb->GetUnitPos(it->first)) > 20*20*SQUARE_SIZE*SQUARE_SIZE // and not close to rally point
 			&& !it->second->HaveGoalType(RETREAT)) {	 // and doesn't have a retreat goal
-			// unit is not used
+			// retreat
 			ailog->info() << "retreating unused " << it->first << std::endl;
 			Goal* newgoal = CreateRetreatGoal(*it->second, 15*GAME_SPEED);
 			it->second->AddGoal(newgoal);
