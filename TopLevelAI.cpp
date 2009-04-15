@@ -72,44 +72,10 @@ GoalProcessor::goal_process_t TopLevelAI::ProcessGoal(Goal* g)
 
 	switch (g->type) {
 		case BUILD_EXPANSION:
-			ailog->info() << "goal " << g->id << ": BUILD_EXPANSION (" << g->params[0] << ")" << std::endl;
-			if (!g->is_executing() && skippedGoals.find(g->id) == skippedGoals.end()) {
-				// add goal for builder group
-				Goal *newgoal = Goal::GetGoal(Goal::CreateGoal(g->priority, BUILD_EXPANSION));
-				newgoal->params.push_back(g->params[0]);
-				newgoal->parent = g->id;
-
-				// events for current goal
-				g->OnAbort(AbortGoal(*newgoal));
-				g->OnAbort(RemoveGoalFromSkipped(*this));
-				g->OnComplete(CompleteGoal(*newgoal));
-				g->OnComplete(RemoveGoalFromSkipped(*this));
-
-				// events for subgoal
-				newgoal->OnComplete(CompleteGoal(*g));
-				newgoal->OnStart(StartGoal(*g));
-				newgoal->OnAbort(AbortGoal(*g));
-
-				builders->AddGoal(newgoal);
-				skippedGoals.insert(g->id);
-			}
+			ProcessBuildExpansion(g);
 			break;
 		case BUILD_CONSTRUCTOR:
-			ailog->info() << "goal " << g->id << ": BUILD_CONSTRUCTOR" << std::endl;
-			if (!g->is_executing()) {
-				Goal *newgoal = Goal::GetGoal(Goal::CreateGoal(g->priority, BUILD_CONSTRUCTOR));
-				newgoal->parent = g->id;
-				
-				g->OnAbort(AbortGoal(*newgoal));
-				g->OnComplete(CompleteGoal(*newgoal));
-				
-				newgoal->OnComplete(CompleteGoal(*g));
-				// start only when child starts
-				newgoal->OnStart(StartGoal(*g));
-
-				bases->AddGoal(newgoal);
-				g->start();		
-			}
+			ProcessBuildConstructor(g);
 			break;
 		default:
 			ailog->info() << "unknown goal type: " << g->type << " params "
@@ -121,6 +87,51 @@ GoalProcessor::goal_process_t TopLevelAI::ProcessGoal(Goal* g)
 			ailog->info() << "params: " << ss.str() << endl;
 	}
 	return PROCESS_CONTINUE;
+}
+
+
+void TopLevelAI::ProcessBuildExpansion(Goal* g)
+{
+	ailog->info() << "goal " << g->id << ": BUILD_EXPANSION (" << g->params[0] << ")" << std::endl;
+	if (!g->is_executing() && skippedGoals.find(g->id) == skippedGoals.end()) {
+		// add goal for builder group
+		Goal *newgoal = Goal::GetGoal(Goal::CreateGoal(g->priority, BUILD_EXPANSION));
+		newgoal->params.push_back(g->params[0]);
+		newgoal->parent = g->id;
+
+		// events for current goal
+		g->OnAbort(AbortGoal(*newgoal));
+		g->OnAbort(RemoveGoalFromSkipped(*this));
+		g->OnComplete(CompleteGoal(*newgoal));
+		g->OnComplete(RemoveGoalFromSkipped(*this));
+
+		// events for subgoal
+		newgoal->OnComplete(CompleteGoal(*g));
+		newgoal->OnStart(StartGoal(*g));
+		newgoal->OnAbort(AbortGoal(*g));
+
+		builders->AddGoal(newgoal);
+		skippedGoals.insert(g->id);
+	}
+}
+
+void TopLevelAI::ProcessBuildConstructor(Goal* g)
+{
+	ailog->info() << "goal " << g->id << ": BUILD_CONSTRUCTOR" << std::endl;
+	if (!g->is_executing()) {
+		Goal *newgoal = Goal::GetGoal(Goal::CreateGoal(g->priority, BUILD_CONSTRUCTOR));
+		newgoal->parent = g->id;
+		
+		g->OnAbort(AbortGoal(*newgoal));
+		g->OnComplete(CompleteGoal(*newgoal));
+		
+		newgoal->OnComplete(CompleteGoal(*g));
+		// start only when child starts
+		newgoal->OnStart(StartGoal(*g));
+
+		bases->AddGoal(newgoal);
+		g->start();		
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

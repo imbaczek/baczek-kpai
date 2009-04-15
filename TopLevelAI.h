@@ -26,6 +26,9 @@ public:
 	goal_process_t ProcessGoal(Goal* g);
 	void Update();
 
+	void ProcessBuildExpansion(Goal* g);
+	void ProcessBuildConstructor(Goal* g);
+
 	void AssignUnitToGroup(Unit* unit);
 	void FindGoals();
 
