@@ -527,6 +527,22 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="RStarTree"
+				>
+				<File
+					RelativePath=".\RStarTree\RStarBoundingBox.h"
+					>
+				</File>
+				<File
+					RelativePath=".\RStarTree\RStarTree.h"
+					>
+				</File>
+				<File
+					RelativePath=".\RStarTree\RStarVisitor.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"
