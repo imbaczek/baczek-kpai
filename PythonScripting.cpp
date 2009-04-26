@@ -88,7 +88,7 @@ struct std_item
     static void del(T & x, int i)
     {
         if( i<0 ) i+=x.size();
-        if( i>=0 && i<x.size() ) x.erase(i);
+        if( i>=0 && i<x.size() ) x.erase(x.begin()+i);
         else IndexError();
     }
     static void add(T const& x, V const& v)
@@ -119,6 +119,7 @@ BOOST_PYTHON_MODULE(pykpai)
 			return_value_policy<copy_non_const_reference>())
 		.def("__setitem__", &std_item<std::vector<float3>, float3 >::set,
 			 with_custodian_and_ward<1,2>()) // to let container keep value
+		.def("__delitem__", &std_item<std::vector<float3>, float3>::del)
 		;
 	def("SendTextMessage", PythonFunctions::SendTextMessage);
 }
