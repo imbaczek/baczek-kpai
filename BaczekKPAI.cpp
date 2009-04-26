@@ -346,7 +346,7 @@ void BaczekKPAI::DumpStatus()
 	unlink(statusName);
 	rename(tmpName.c_str(), statusName);
 
-	python->DumpStatus(frame, geovents, friends, enemies);
+	//python->DumpStatus(frame, geovents, friends, enemies);
 }
 
 ///////////////////
