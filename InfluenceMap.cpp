@@ -11,6 +11,8 @@
 #include "ExternalAI/IGlobalAICallback.h"
 #include "Sim/Units/UnitDef.h"
 
+#include "RStarTree/RStarTree.h"
+
 #include "Log.h"
 #include "InfluenceMap.h"
 #include "BaczekKPAI.h"
@@ -43,6 +45,97 @@ int InfluenceMap::GetAtXY(int x, int y)
 	x = x*scalex;
 	y = y*scaley;
 	return map[x][y];
+}
+
+// TODO this shouldn't be here
+// move to another file
+typedef RStarTree<int, 2, 32, 64> RTree;
+typedef RTree::BoundingBox BoundingBox;
+
+BoundingBox bounds(int x, int y, int w, int h)
+{
+	BoundingBox bb;
+	
+	bb.edges[0].first  = x;
+	bb.edges[0].second = x + w;
+	
+	bb.edges[1].first  = y;
+	bb.edges[1].second = y + h;
+	
+	return bb;
+} 
+
+
+struct Visitor {
+	int current;
+	float sqradius;
+	std::set<int>& list;
+	const std::vector<float3>& positions;
+	bool ContinueVisiting;
+	Visitor(int c, float sqrad, std::set<int>& l, const std::vector<float3>& pos):
+			current(c), sqradius(sqrad), list(l), positions(pos), ContinueVisiting(true) {}
+	void operator()(const RTree::Leaf * const leaf) {
+		if (leaf->leaf == current)
+			return;
+		if (list.find(leaf->leaf) != list.end())
+			return;
+		float sqdist = positions[current].SqDistance2D(positions[leaf->leaf]);
+		if (sqdist < sqradius)
+			list.insert(leaf->leaf);
+	}
+};
+
+void InfluenceMap::FindLocalMinima(float radius, std::vector<int> &values, std::vector<float3> &positions)
+{
+	float r = radius*radius*scalex*scaley;
+	values.clear();
+	positions.clear();
+	RTree rtree;
+
+	// find points such that
+	// a b c
+	// d X f
+	// g h i
+	// X is min(a, b, c, d, f, g, h, i, X)
+	for (int x = 0; x<mapw; ++x) {
+		for (int y = 0; y<maph; ++y) {
+			int v = map[x][y];
+			bool found = true;
+			for (int x1 = std::max(0, x-1); x1 < std::min(mapw, x+2); ++x1) {
+				for (int y1 = std::max(0, y-1); y1 < std::min(maph, y+2); ++y1) {
+					if (x == x1 && y == y1)
+						continue;
+					if (map[x1][y1] < v) {
+						goto not_found;
+					}
+				}
+			}
+			if (found) {
+				values.push_back(map[x][y]);
+				positions.push_back(float3(x/scalex, 0, y/scaley));
+				rtree.Insert(positions.size()-1, bounds(x/scalex, x/scaley, 0, 0));
+			}
+not_found:  ;
+		}
+	}
+
+	// remove points which are too close to each other
+	// according to the provided radius
+	if (radius <= 0)
+		return;
+	std::set<int> toDel;
+
+	for (int i = 0; i<positions.size(); ++i) {
+		if (toDel.find(i) == toDel.end()) { // only if not marked for deletion already
+			rtree.Query(RTree::AcceptEnclosing(bounds(positions[i].x - radius, positions[i].z - radius, 2*radius, 2*radius)),
+				Visitor(i, radius*radius, toDel, positions));
+		}
+	}
+
+	for (std::set<int>::reverse_iterator it = toDel.rbegin(); it != toDel.rend(); ++it) {
+		values.erase(values.begin() + *it);
+		positions.erase(positions.begin() + *it);
+	}
 }
 
 

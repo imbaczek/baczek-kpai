@@ -54,4 +54,6 @@ public:
 	void Update(const std::vector<int>& friends,
 				const std::vector<int>& enemies);
 	void UpdateSingleUnit(int uid, int sign);
+
+	void FindLocalMinima(float radius, std::vector<int>& values, std::vector<float3>& positions);
 };
