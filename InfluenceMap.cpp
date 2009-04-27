@@ -291,13 +291,13 @@ void InfluenceMap::WriteDefaultJSONConfig(std::string configName) {
 	PUSH_UNIT("packet", ud);
 	// heavy units
 	ud.radius = 768;
-	ud.max_value = 40;
+	ud.max_value = 100;
 	PUSH_UNIT("byte", ud);
 	PUSH_UNIT("worm", ud);
 	PUSH_UNIT("connection", ud);
 	// arty units
 	ud.radius = 1024;
-	ud.max_value = 20;
+	ud.max_value = 30;
 	PUSH_UNIT("pointer", ud);
 	PUSH_UNIT("dos", ud);
 	PUSH_UNIT("flow", ud);
