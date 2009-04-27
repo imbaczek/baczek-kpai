@@ -18,7 +18,9 @@ class BaczekKPAI;
 class UnitGroupAI : public GoalProcessor
 {
 public:
-	UnitGroupAI(BaczekKPAI *theai) : ai(theai), rallyPoint(-1, -1, -1) {};
+	UnitGroupAI(BaczekKPAI *theai) : ai(theai), rallyPoint(-1, -1, -1),
+			dir(1, 0, 0), rightdir(0, 0, 1)
+		{};
 	~UnitGroupAI() {};
 
 	BaczekKPAI* ai;
@@ -67,6 +69,10 @@ public:
 
 	float3 rallyPoint;
 
+	float3 dir;
+	float3 rightdir;
+	int perRow; //<? 
+
 	goal_process_t ProcessGoal(Goal* g);
 	void Update();
 
@@ -85,4 +91,7 @@ public:
 	void RetreatUnusedUnits();
 	Goal* CreateRetreatGoal(UnitAI& uai, int timeoutFrame);
 	bool CheckUnit2Goal();
+
+	void TurnTowards(float3 point);
+	void SetupFormation(float3 point);
 };

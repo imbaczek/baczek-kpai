@@ -335,3 +335,52 @@ float3 UnitGroupAI::GetGroupMidPos()
 	pos /= (float)units.size();
 	return pos;
 }
+
+
+void UnitGroupAI::TurnTowards(float3 point)
+{
+	float3 midpos = GetGroupMidPos();
+	float3 diff = midpos - point;
+	dir = diff;
+	dir.y = 0;
+	dir.ANormalize();
+	rightdir.x = -dir.z;
+	rightdir.z = dir.x;
+	// TODO move units to the new locations
+	SetupFormation(point);
+}
+
+void UnitGroupAI::SetupFormation(float3 point)
+{
+	// TODO move to data file
+	const static float aspectRatio = 4.f;
+	const static int spacing = 64;
+	// perRow ** 2 / aspect ratio = total units
+	perRow = std::ceil(std::sqrt(units.size()*aspectRatio));
+	ailog->info() << "SetupFormation: perRow = " << perRow << std::endl;
+
+	// put units like this
+	//   front
+	// 3 1 0 2 4
+	// 8 6 5 7 9
+	int i = 0;
+	for (UnitAISet::iterator it = units.begin(); it != units.end(); ++i, ++it) {
+		if (it->second->currentGoalId >= 0) {
+			continue;
+		}
+		int rowPos = i%perRow;
+		int x;
+		if (rowPos & 1) { // odd variant
+			x = -(rowPos % perRow) / 2 - 1;
+		} else { // even
+			x = (rowPos % perRow) / 2; 
+		}
+		int y = i/perRow;
+		Goal* g = Goal::GetGoal(Goal::CreateGoal(10, MOVE));
+		assert(g);
+		float3 dest = dir*y*-spacing + rightdir*x*spacing + point;
+		g->params.push_back(dest);
+		it->second->AddGoal(g);
+	}
+}
+
