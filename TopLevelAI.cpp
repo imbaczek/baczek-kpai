@@ -147,6 +147,8 @@ void TopLevelAI::FindGoals()
 	FindGoalsRetreatBuilders(badSpots); // and used here
 
 	FindGoalsBuildConstructors();
+
+	FindGoalsAttack();
 }
 
 /// find suitable expansion spots
@@ -363,15 +365,64 @@ void TopLevelAI::FindGoalsBuildConstructors()
 }
 
 
+void TopLevelAI::FindGoalsAttack()
+{
+	std::vector<int> values;
+	std::vector<float3> positions;
+	ai->influence->FindLocalMinima(256, values, positions);
+	// find maximum minimum, move there, face minimim minimum (doesn't sound too good, yeah)
+	int maxmin = INT_MIN;
+	int maxminidx = -1;
+	int minmin = INT_MAX;
+	int minminidx = -1;
+	for (std::vector<int>::iterator it = values.begin(); it != values.end(); ++it) {
+		if (*it > maxmin) {
+			maxmin = *it;
+			maxminidx = it - values.begin();
+		}
+		if (*it < minmin) {
+			minmin = *it;
+			minminidx = it - values.begin();
+		}
+	}
+
+	if (!groups.empty()) {
+		if (minminidx != maxminidx) {
+			groups[0].MoveTurnTowards(positions[minminidx], positions[maxminidx]);
+		} else {
+			groups[0].MoveTurnTowards(positions[minminidx], float3(ai->map.w*0.5f, 0, ai->map.h*0.5f));
+		}
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 
 void TopLevelAI::AssignUnitToGroup(Unit* unit)
 {
-	if (unit->is_base)
+	// easy stuff
+	if (unit->is_base) {
 		bases->AssignUnit(unit);
-	else if (unit->is_constructor)
+		return;
+	}
+	else if (unit->is_constructor) {
 		builders->AssignUnit(unit);
+		return;
+	}
+
+	// TODO hard stuff: assign combat units to combat groups
+
+	// if there are no groups, create one
+	// else, check if one group needs to be split
+	if (groups.empty()) {
+		groups.push_back(new UnitGroupAI(ai));
+	}
+
+	// assign unit to a group
+	int g = randint(0, groups.size()-1);
+	groups[g].AssignUnit(unit);
+
+	ailog->info() << "unit " << unit->id << " assigned to combat group " << g << std::endl;
 }
 
 void TopLevelAI::HandleExpansionCommands(Unit* expansion)

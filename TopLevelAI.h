@@ -35,6 +35,7 @@ public:
 	void FindGoalsExpansion(std::vector<float3>& badSpots);
 	void FindGoalsRetreatBuilders(std::vector<float3>& badSpots);
 	void FindGoalsBuildConstructors();
+	void FindGoalsAttack();
 
 	void HandleExpansionCommands(Unit* expansion);
 };
