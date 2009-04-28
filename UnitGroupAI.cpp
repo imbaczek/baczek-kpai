@@ -350,6 +350,18 @@ void UnitGroupAI::TurnTowards(float3 point)
 	SetupFormation(point);
 }
 
+void UnitGroupAI::MoveTurnTowards(float3 dest, float3 point)
+{
+	float3 diff = dest - point;
+	dir = diff;
+	dir.y = 0;
+	dir.ANormalize();
+	rightdir.x = -dir.z;
+	rightdir.z = dir.x;
+	// TODO move units to the new locations
+	SetupFormation(dest);
+}
+
 void UnitGroupAI::SetupFormation(float3 point)
 {
 	// TODO move to data file

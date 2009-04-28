@@ -93,5 +93,6 @@ public:
 	bool CheckUnit2Goal();
 
 	void TurnTowards(float3 point);
+	void MoveTurnTowards(float3 dest, float3 point);
 	void SetupFormation(float3 point);
 };
