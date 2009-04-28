@@ -354,7 +354,11 @@ void UnitGroupAI::SetupFormation(float3 point)
 {
 	// TODO move to data file
 	const static float aspectRatio = 4.f;
-	const static int spacing = 64;
+	const static int spacing = 48;
+
+	int friends[MAX_UNITS];
+	int friend_cnt;
+
 	// perRow ** 2 / aspect ratio = total units
 	perRow = std::ceil(std::sqrt(units.size()*aspectRatio));
 	ailog->info() << "SetupFormation: perRow = " << perRow << std::endl;
@@ -363,6 +367,7 @@ void UnitGroupAI::SetupFormation(float3 point)
 	//   front
 	// 3 1 0 2 4
 	// 8 6 5 7 9
+	// if there are units on chosen spots, skip that spot and just move units to the destination
 	int i = 0;
 	for (UnitAISet::iterator it = units.begin(); it != units.end(); ++i, ++it) {
 		if (it->second->currentGoalId >= 0) {
@@ -376,9 +381,18 @@ void UnitGroupAI::SetupFormation(float3 point)
 			x = (rowPos % perRow) / 2; 
 		}
 		int y = i/perRow;
+		float3 dest = dir*y*-spacing + rightdir*x*spacing + point;
+		dest.y = ai->GetGroundHeight(dest.x, dest.z);
+
+		// don't issue a move order if there already is a unit on the destination
+		friend_cnt = ai->cb->GetFriendlyUnits(friends, dest, spacing);
+		if (friend_cnt > 0) {
+			continue;
+		}
+
 		Goal* g = Goal::GetGoal(Goal::CreateGoal(10, MOVE));
 		assert(g);
-		float3 dest = dir*y*-spacing + rightdir*x*spacing + point;
+
 		g->params.push_back(dest);
 		it->second->AddGoal(g);
 	}
