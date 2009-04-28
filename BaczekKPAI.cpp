@@ -467,3 +467,23 @@ float BaczekKPAI::EstimateDistancePF(const UnitDef* unitdef, const float3& start
 	cb->FreePath(pathId);
 	return dist;
 }
+
+
+//////////////////////////////////////////////////////////////////
+
+float BaczekKPAI::GetGroundHeight(float x, float y)
+{
+	int xsquare = int(x) / SQUARE_SIZE;
+	int ysquare = int(y) / SQUARE_SIZE;
+
+	if (xsquare < 0)
+		xsquare = 0;
+	else if (xsquare > map.w - 1)
+		xsquare = map.w - 1;
+	if (ysquare < 0)
+		ysquare = 0;
+	else if (ysquare > map.h - 1)
+		ysquare = map.h - 1;
+
+	return cb->GetHeightMap()[xsquare + ysquare * map.h];
+}

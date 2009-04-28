@@ -112,6 +112,9 @@ public:
 	// slower versions for precise distance
 	float EstimateDistancePF(int unitID, const float3& start, const float3& end);
 	float EstimateDistancePF(const UnitDef* unitdef, const float3& start, const float3& end);
+
+	// heightmap
+	float GetGroundHeight(float x, float y);
 };
 
 #endif // !defined(AFX_GroupAI_H__10718E36_5CDF_4CD4_8D90_F41311DD2694__INCLUDED_)
