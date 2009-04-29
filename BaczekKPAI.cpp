@@ -135,6 +135,8 @@ void BaczekKPAI::UnitCreated(int unit)
 
 	if (unitTable[unit]->is_expansion)
 		toplevel->HandleExpansionCommands(unitTable[unit]);
+	else if (unitTable[unit]->is_base)
+		toplevel->HandleBaseStartCommands(unitTable[unit]);
 }
 
 void BaczekKPAI::UnitFinished(int unit)
@@ -143,6 +145,7 @@ void BaczekKPAI::UnitFinished(int unit)
 
 	assert(unitTable[unit]);
 	unitTable[unit]->complete();
+	toplevel->UnitFinished(unitTable[unit]);
 	toplevel->AssignUnitToGroup(unitTable[unit]);
 }
 

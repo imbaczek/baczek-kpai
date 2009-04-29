@@ -18,10 +18,21 @@ public:
 
 	UnitGroupAI* builders;
 	UnitGroupAI* bases;
+	UnitGroupAI* expansions;
 	boost::ptr_vector<UnitGroupAI> groups;
 	std::set<int> skippedGoals;
 
+	int currentBattleGroup;
+	int currentAssignGroup;
+	int lastRetreatTime;
+	int lastSwapTime;
+	int lastStateChangeTime;
+
+	enum AttackState { AST_ATTACK, AST_GATHER };
+	AttackState attackState;
+
 	int builderRetreatGoalId;
+	int queuedConstructors;
 
 	goal_process_t ProcessGoal(Goal* g);
 	void Update();
@@ -30,12 +41,26 @@ public:
 	void ProcessBuildConstructor(Goal* g);
 
 	void AssignUnitToGroup(Unit* unit);
+	void InitBattleGroups();
+
 	void FindGoals();
 
 	void FindGoalsExpansion(std::vector<float3>& badSpots);
 	void FindGoalsRetreatBuilders(std::vector<float3>& badSpots);
 	void FindGoalsBuildConstructors();
+	
+	void FindBattleGroupGoals();
+	void FindGoalsGather();
 	void FindGoalsAttack();
 
+	void SwapBattleGroups();
+	void SetAttackState(AttackState state);
+
+	void RetreatGroup(UnitGroupAI* group, const float3& dest);
+	void RetreatGroup(UnitGroupAI* group);
+
 	void HandleExpansionCommands(Unit* expansion);
+	void HandleBaseStartCommands(Unit* base);
+
+	void UnitFinished(Unit* unit);
 };

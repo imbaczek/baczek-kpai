@@ -84,6 +84,9 @@ public:
 	void RemoveUnit(Unit* unit);
 	void RemoveUnitAI(UnitAI& unitai);
 
+	// pos - point to which compute closest unit
+	// unit - returns unit id
+	// unitdef - unitdef for pathfinder purposes
 	float SqDistanceClosestUnit(const float3& pos, int* unit, const UnitDef* unitdef);
 
 	float3 GetGroupMidPos();

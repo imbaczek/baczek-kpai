@@ -257,7 +257,7 @@ Goal* UnitGroupAI::CreateRetreatGoal(UnitAI &uai, int timeoutFrame)
 	Goal *g = Goal::GetGoal(Goal::CreateGoal(1, RETREAT));
 	assert(g);
 	g->timeoutFrame = timeoutFrame;
-	g->params.push_back(random_offset_pos(rallyPoint, 0, SQUARE_SIZE*10));
+	g->params.push_back(random_offset_pos(rallyPoint, SQUARE_SIZE*4, SQUARE_SIZE*4*sqrt((float)units.size())));
 	return g;
 }
 

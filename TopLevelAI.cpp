@@ -21,12 +21,21 @@ TopLevelAI::TopLevelAI(BaczekKPAI* theai)
 	ai = theai;
 	builders = new UnitGroupAI(theai);
 	bases = new UnitGroupAI(theai);
+	expansions = new UnitGroupAI(theai);
+	InitBattleGroups();
+
+	// initially, gather
+	attackState = AST_GATHER;
+	lastRetreatTime = -10000;
+
+	queuedConstructors = 0;
 }
 
 TopLevelAI::~TopLevelAI(void)
 {
 	delete builders; builders = 0;
 	delete bases; bases = 0;
+	delete expansions; expansions = 0;
 }
 
 void TopLevelAI::Update()
@@ -148,7 +157,7 @@ void TopLevelAI::FindGoals()
 
 	FindGoalsBuildConstructors();
 
-	FindGoalsAttack();
+	FindBattleGroupGoals();
 }
 
 /// find suitable expansion spots
@@ -354,19 +363,137 @@ void TopLevelAI::FindGoalsBuildConstructors()
 
 	// FIXME magic number
 	// should be a function of time passed and map size/free geospots
-	if (goalcnt + bldcnt < 3) {
+	if (goalcnt + bldcnt + queuedConstructors < 4) {
 		ailog->info() << "adding BUILD_CONSTRUCTOR goal" << std::endl;
 		Goal* g = Goal::GetGoal(Goal::CreateGoal(1, BUILD_CONSTRUCTOR));
 		assert(g);
 		AddGoal(g);
+		++queuedConstructors;
 	}
 
 	std::sort(goals.begin(), goals.end(), goal_priority_less());
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+// battle group goals
+
+
+void TopLevelAI::FindBattleGroupGoals()
+{
+	ailog->info() << "assign group size: " << groups[currentAssignGroup].units.size()
+		<< " battle group size: " << groups[currentBattleGroup].units.size() << std::endl;
+
+	int frameNum = ai->cb->GetCurrentFrame();
+
+	// swap groups with some probability
+	// TODO be smarter here
+	if (!groups[currentAssignGroup].units.empty()
+			&& random() < 0.5 && lastSwapTime + 120*GAME_SPEED < frameNum) {
+		SwapBattleGroups();
+	}
+
+	// change state with some probability
+	// TODO be smarter about this
+	if (!groups[currentBattleGroup].units.empty() && lastStateChangeTime + 90*GAME_SPEED < frameNum
+			&& random() < 0.25) {
+		if (attackState == AST_ATTACK)
+			SetAttackState(AST_GATHER);
+		else
+			SetAttackState(AST_ATTACK);
+	}
+
+	FindGoalsGather();
+	FindGoalsAttack();
+}
+
+
+void TopLevelAI::FindGoalsGather()
+{
+	// initial gather spot: base
+	float3 gatherSpot = random_offset_pos(bases->GetGroupMidPos(), 256, 768);
+	groups[currentAssignGroup].rallyPoint = gatherSpot;
+
+	// if there are no expansions, gather at base
+	if (expansions->units.empty()) {
+		groups[currentBattleGroup].rallyPoint = gatherSpot;
+		return;
+	}
+
+	// better spot - expansion closest to enemy 
+	// TODO cache use of FindLocalMinima
+	std::vector<int> values;
+	std::vector<float3> positions;
+	ai->influence->FindLocalMinima(256, values, positions);
+	
+	// first, find minimum is closest to our base
+	// then, find which expansion is closest to this minimum
+	// gather there
+	int found = -1;
+	float sqdist = FLT_MAX;
+	for (int i = 0; i<values.size(); ++i) {
+		if (values[i] >= 0)
+			continue;
+		int uid;
+		float tmp = bases->SqDistanceClosestUnit(positions[i], &uid, NULL);
+		// less than 0 means not reachable
+		if (tmp >= 0 && tmp < sqdist) {
+			sqdist = tmp;
+			found = i;
+		}
+	}
+	// if not found, bail out
+	if (found == -1) {
+		groups[currentBattleGroup].rallyPoint = gatherSpot;
+		return;
+	}
+	// now, find the expansion
+	int uid;
+	expansions->SqDistanceClosestUnit(positions[found], &uid, NULL);
+	// set the rally point
+	groups[currentBattleGroup].rallyPoint = random_offset_pos(ai->cb->GetUnitPos(uid), 256, 768);
+
+	// issue retreat goals every 30s or so
+	int frameNum = ai->cb->GetCurrentFrame();
+	if (lastRetreatTime + 30*GAME_SPEED < frameNum) {
+		lastRetreatTime = frameNum;
+		RetreatGroup(&groups[currentAssignGroup]);
+		if (attackState == AST_GATHER)
+			RetreatGroup(&groups[currentBattleGroup]);
+	}
+}
+
+
+void TopLevelAI::SwapBattleGroups()
+{
+	int tmp = currentAssignGroup;
+	currentAssignGroup = currentBattleGroup;
+	currentBattleGroup = tmp;
+}
+
+void TopLevelAI::SetAttackState(TopLevelAI::AttackState state)
+{
+	if (state == attackState)
+		return;
+	
+	// switch state and do postprocessing
+	attackState = state;
+	lastStateChangeTime = ai->cb->GetCurrentFrame();
+	switch (state) {
+		case AST_ATTACK:
+			// reset retreat counter
+			lastRetreatTime = -10000;
+			break;
+		case AST_GATHER:
+			break;
+	}
+}
 
 void TopLevelAI::FindGoalsAttack()
 {
+	if (attackState != AST_ATTACK)
+		return;
+
 	std::vector<int> values;
 	std::vector<float3> positions;
 	ai->influence->FindLocalMinima(256, values, positions);
@@ -388,9 +515,9 @@ void TopLevelAI::FindGoalsAttack()
 
 	if (!groups.empty()) {
 		if (minminidx != maxminidx) {
-			groups[0].MoveTurnTowards(positions[minminidx], positions[maxminidx]);
+			groups[currentBattleGroup].MoveTurnTowards(positions[minminidx], positions[maxminidx]);
 		} else {
-			groups[0].MoveTurnTowards(positions[minminidx], float3(ai->map.w*0.5f, 0, ai->map.h*0.5f));
+			groups[currentBattleGroup].MoveTurnTowards(positions[minminidx], float3(ai->map.w*0.5f, 0, ai->map.h*0.5f));
 		}
 	}
 }
@@ -398,8 +525,25 @@ void TopLevelAI::FindGoalsAttack()
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 
+void TopLevelAI::InitBattleGroups()
+{
+	if (groups.empty()) {
+		// add 2 groups
+		groups.push_back(new UnitGroupAI(ai));
+		groups.push_back(new UnitGroupAI(ai));
+		// currently adding to group 0
+		currentAssignGroup = 0;
+		currentBattleGroup = 1;
+
+		lastSwapTime = -10000;
+	}
+}
+
 void TopLevelAI::AssignUnitToGroup(Unit* unit)
 {
+	if (unit->is_killed)
+		return;
+
 	// easy stuff
 	if (unit->is_base) {
 		bases->AssignUnit(unit);
@@ -409,21 +553,19 @@ void TopLevelAI::AssignUnitToGroup(Unit* unit)
 		builders->AssignUnit(unit);
 		return;
 	}
-
-	// TODO hard stuff: assign combat units to combat groups
-
-	// if there are no groups, create one
-	// else, check if one group needs to be split
-	if (groups.empty()) {
-		groups.push_back(new UnitGroupAI(ai));
+	else if (unit->is_expansion) {
+		expansions->AssignUnit(unit);
+		return;
 	}
 
-	// assign unit to a group
-	int g = randint(0, groups.size()-1);
-	groups[g].AssignUnit(unit);
+	groups[currentAssignGroup].AssignUnit(unit);
 
-	ailog->info() << "unit " << unit->id << " assigned to combat group " << g << std::endl;
+	ailog->info() << "unit " << unit->id << " assigned to combat group " << currentAssignGroup << std::endl;
 }
+
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+
 
 void TopLevelAI::HandleExpansionCommands(Unit* expansion)
 {
@@ -440,4 +582,42 @@ void TopLevelAI::HandleExpansionCommands(Unit* expansion)
 
 	ai->cb->GiveOrder(expansion->id, &repeat);
 	ai->cb->GiveOrder(expansion->id, &build);
+}
+
+
+void TopLevelAI::HandleBaseStartCommands(Unit* base)
+{
+	assert(base);
+	if (!base->ai)
+		base->ai.reset(new UnitAI(ai, base));
+
+	Command build;
+	build.id = -base->ai->FindSpamUnitDefId();
+	assert(build.id < 0);
+	
+	ai->cb->GiveOrder(base->id, &build);
+	ai->cb->GiveOrder(base->id, &build);
+	ai->cb->GiveOrder(base->id, &build);
+}
+
+
+void TopLevelAI::RetreatGroup(UnitGroupAI *group, const float3 &dest)
+{
+	Goal* goal = Goal::GetGoal(Goal::CreateGoal(10, RETREAT));
+	goal->params.push_back(dest);
+	// FIXME move constant to data file
+	goal->timeoutFrame = ai->cb->GetCurrentFrame() + 30*GAME_SPEED;
+	group->AddGoal(goal);
+}
+
+void TopLevelAI::RetreatGroup(UnitGroupAI *group)
+{
+	RetreatGroup(group, group->rallyPoint);
+}
+
+void TopLevelAI::UnitFinished(Unit* unit)
+{
+	if (unit->is_constructor)
+		--queuedConstructors;
+	assert(queuedConstructors >= 0);
 }
