@@ -201,11 +201,13 @@ void BaczekKPAI::UnitIdle(int unit)
 	if (u->ai)
 		u->ai->CompleteCurrentGoal();
 
+	toplevel->UnitIdle(u);
+
 	const UnitDef* ud=cb->GetUnitDef(unit);
 
 	static char c[200];
 	SNPRINTF(c, 200, "Idle unit %s", ud->humanName.c_str());
-	cb->SendTextMsg(c, 0);
+	//cb->SendTextMsg(c, 0);
 }
 
 void BaczekKPAI::GotChatMsg(const char* msg,int player)

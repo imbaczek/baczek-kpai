@@ -159,6 +159,8 @@ void UnitGroupAI::ProcessMove(Goal* goal)
 	// may throw
 	rallyPoint = boost::get<float3>(goal->params[0]);
 
+	int i = 0;
+
 	BOOST_FOREACH(UnitAISet::value_type& v, units) {
 		UnitAIPtr uai = v.second;
 		Unit* unit = uai->owner;
@@ -334,6 +336,15 @@ float3 UnitGroupAI::GetGroupMidPos()
 	}
 	pos /= (float)units.size();
 	return pos;
+}
+
+int UnitGroupAI::GetGroupHealth()
+{
+	int health = 0;
+	for (UnitAISet::iterator it = units.begin(); it != units.end(); ++it) {
+		health += ai->cb->GetUnitHealth(it->first);
+	}
+	return health;
 }
 
 

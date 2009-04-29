@@ -71,7 +71,7 @@ public:
 
 	float3 dir;
 	float3 rightdir;
-	int perRow; //<? 
+	int perRow; //<? units per row in formation
 
 	goal_process_t ProcessGoal(Goal* g);
 	void Update();
@@ -90,6 +90,7 @@ public:
 	float SqDistanceClosestUnit(const float3& pos, int* unit, const UnitDef* unitdef);
 
 	float3 GetGroupMidPos();
+	int GetGroupHealth();
 
 	void RetreatUnusedUnits();
 	Goal* CreateRetreatGoal(UnitAI& uai, int timeoutFrame);

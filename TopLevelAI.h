@@ -19,6 +19,8 @@ public:
 	UnitGroupAI* builders;
 	UnitGroupAI* bases;
 	UnitGroupAI* expansions;
+
+	typedef boost::ptr_vector<UnitGroupAI> UnitGroupVector;
 	boost::ptr_vector<UnitGroupAI> groups;
 	std::set<int> skippedGoals;
 
@@ -27,6 +29,7 @@ public:
 	int lastRetreatTime;
 	int lastSwapTime;
 	int lastStateChangeTime;
+	int attackStartHealth;
 
 	enum AttackState { AST_ATTACK, AST_GATHER };
 	AttackState attackState;
@@ -49,9 +52,12 @@ public:
 	void FindGoalsRetreatBuilders(std::vector<float3>& badSpots);
 	void FindGoalsBuildConstructors();
 	
+	void FindBaseBuildGoals();
+
 	void FindBattleGroupGoals();
 	void FindGoalsGather();
 	void FindGoalsAttack();
+	void FindPointerTargets();
 
 	void SwapBattleGroups();
 	void SetAttackState(AttackState state);
@@ -62,5 +68,6 @@ public:
 	void HandleExpansionCommands(Unit* expansion);
 	void HandleBaseStartCommands(Unit* base);
 
+	void UnitIdle(Unit* unit);
 	void UnitFinished(Unit* unit);
 };

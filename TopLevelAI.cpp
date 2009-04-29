@@ -58,6 +58,7 @@ void TopLevelAI::Update()
 	builders->Update();
 	if (frameNum %30 == 1) {
 		builders->RetreatUnusedUnits();
+		FindPointerTargets();
 	}
 	bases->Update();
 	BOOST_FOREACH(UnitGroupAI& it, groups) {
@@ -156,6 +157,7 @@ void TopLevelAI::FindGoals()
 	FindGoalsRetreatBuilders(badSpots); // and used here
 
 	FindGoalsBuildConstructors();
+	FindBaseBuildGoals();
 
 	FindBattleGroupGoals();
 }
@@ -363,7 +365,7 @@ void TopLevelAI::FindGoalsBuildConstructors()
 
 	// FIXME magic number
 	// should be a function of time passed and map size/free geospots
-	if (goalcnt + bldcnt + queuedConstructors < 4) {
+	if (goalcnt + bldcnt + queuedConstructors < 4 - expansions->units.empty() - groups[currentBattleGroup].units.empty()) {
 		ailog->info() << "adding BUILD_CONSTRUCTOR goal" << std::endl;
 		Goal* g = Goal::GetGoal(Goal::CreateGoal(1, BUILD_CONSTRUCTOR));
 		assert(g);
@@ -388,19 +390,47 @@ void TopLevelAI::FindBattleGroupGoals()
 
 	// swap groups with some probability
 	// TODO be smarter here
+	bool swapped = false;
+	int cagsize = groups[currentAssignGroup].units.size();
+	int cbgsize = groups[currentBattleGroup].units.size();
 	if (!groups[currentAssignGroup].units.empty()
-			&& random() < 0.5 && lastSwapTime + 120*GAME_SPEED < frameNum) {
+			&& cagsize * 0.8 > cbgsize
+			&& random() < 0.5 && lastSwapTime + 180*GAME_SPEED < frameNum) {
+		ai->cb->SendTextMsg("Battle groups swapped!", 0);
 		SwapBattleGroups();
+		swapped = true;
 	}
 
 	// change state with some probability
 	// TODO be smarter about this
-	if (!groups[currentBattleGroup].units.empty() && lastStateChangeTime + 90*GAME_SPEED < frameNum
-			&& random() < 0.25) {
-		if (attackState == AST_ATTACK)
-			SetAttackState(AST_GATHER);
-		else
+	// TODO move constants to config file
+	bool healthDepleted = (float)groups[currentBattleGroup].GetGroupHealth()/(float)attackStartHealth < 0.5;
+	if (!swapped && !groups[currentBattleGroup].units.empty()) {
+		if (!healthDepleted && attackState == AST_GATHER
+				&& lastStateChangeTime + 90*GAME_SPEED < frameNum
+				&& random() < 0.25) {
+			// try to be smart: if health isn't depleted, attack
+			ai->cb->SendTextMsg("set mode to attack (!hd)", 0);
 			SetAttackState(AST_ATTACK);
+		} else if (healthDepleted && attackState == AST_ATTACK) {
+			// else, retreat
+			SetAttackState(AST_GATHER);
+			ai->cb->SendTextMsg("set mode to gather (hd)", 0);
+		}
+		else if (random() < 0.1) {
+			if (attackState == AST_ATTACK) {
+				// not so smart, toggle state
+				SetAttackState(AST_GATHER);
+				ai->cb->SendTextMsg("set mode to gather", 0);
+			}
+			else {
+				ai->cb->SendTextMsg("set mode to attack", 0);
+				SetAttackState(AST_ATTACK);
+			}
+		}
+	} else if (groups[currentBattleGroup].units.empty()) {
+			SetAttackState(AST_GATHER);
+			ai->cb->SendTextMsg("set mode to gather due to empty group", 0);
 	}
 
 	FindGoalsGather();
@@ -412,7 +442,32 @@ void TopLevelAI::FindGoalsGather()
 {
 	// initial gather spot: base
 	float3 gatherSpot = random_offset_pos(bases->GetGroupMidPos(), 256, 768);
-	groups[currentAssignGroup].rallyPoint = gatherSpot;
+	
+	// find enemies near base (or constructors or expansions)
+	int enemies[MAX_UNITS];
+	int numenemies;
+	numenemies = ai->cheatcb->GetEnemyUnits(enemies, gatherSpot, 1536);
+	// find the closest and sent group there
+	float sqdist = FLT_MAX;
+	float3 foundSpot;
+	int found = -1;
+	for (int i = 0; i<numenemies; ++i) {
+		float3 pos = ai->cheatcb->GetUnitPos(enemies[i]);
+		float tmp = pos.SqDistance2D(gatherSpot);
+		if (tmp < sqdist) {
+			foundSpot = pos;
+			sqdist = tmp;
+			found = enemies[i];
+		}
+	}
+	// if no enemies found, stay at base
+	if (found != -1) {
+		groups[currentAssignGroup].rallyPoint = foundSpot;
+		ai->cb->SendTextMsg("GATHER: reacting to enemy", 0);
+		ai->cb->CreateLineFigure(gatherSpot, foundSpot, 3, 1, 100, 0);
+	}
+	else
+		groups[currentAssignGroup].rallyPoint = gatherSpot;
 
 	// if there are no expansions, gather at base
 	if (expansions->units.empty()) {
@@ -429,8 +484,8 @@ void TopLevelAI::FindGoalsGather()
 	// first, find minimum is closest to our base
 	// then, find which expansion is closest to this minimum
 	// gather there
-	int found = -1;
-	float sqdist = FLT_MAX;
+	found = -1;
+	sqdist = FLT_MAX;
 	for (int i = 0; i<values.size(); ++i) {
 		if (values[i] >= 0)
 			continue;
@@ -483,6 +538,7 @@ void TopLevelAI::SetAttackState(TopLevelAI::AttackState state)
 		case AST_ATTACK:
 			// reset retreat counter
 			lastRetreatTime = -10000;
+			attackStartHealth = groups[currentBattleGroup].GetGroupHealth();
 			break;
 		case AST_GATHER:
 			break;
@@ -523,6 +579,93 @@ void TopLevelAI::FindGoalsAttack()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
+
+void TopLevelAI::FindBaseBuildGoals()
+{
+	if (bases->units.empty())
+		return;
+
+	// FIXME all wrong!
+	int baseid = bases->units.begin()->first;
+	
+	if (ai->cb->GetCurrentUnitCommands(baseid)->size() > 2 || builders->units.empty())
+		return;
+
+	int totalUnits = 0;
+	for (int i = 0; i<groups.size(); ++i) {
+		totalUnits += groups[i].units.size();
+	}
+
+	switch (totalUnits > 10 ? randint(0, 2) : 0) {
+		case 0: { // bits
+			for (int i = 0; i<randint(1, 5); ++i) {
+				Command build;
+				build.id = -ai->cb->GetUnitDef("bit")->id;
+				ai->cb->GiveOrder(baseid, &build);
+			}
+			break;
+		}
+		case 1: { // byte
+			Command build;
+			build.id = -ai->cb->GetUnitDef("byte")->id;
+			ai->cb->GiveOrder(baseid, &build);
+		}
+		case 2: { // pointer
+			Command build;
+			build.id = -ai->cb->GetUnitDef("pointer")->id;
+			ai->cb->GiveOrder(baseid, &build);
+		}
+		default:
+			break;
+	}
+}
+
+void TopLevelAI::FindPointerTargets()
+{
+	int enemies[MAX_UNITS];
+	int numenemies;
+
+	for (UnitGroupVector::iterator git = groups.begin(); git != groups.end(); ++git) {
+		for (UnitGroupAI::UnitAISet::iterator it = git->units.begin(); it != git->units.end(); ++it) {
+			int myid = it->first;
+			const UnitDef* myud = ai->cb->GetUnitDef(myid);
+			if (myud->name != "pointer")
+				continue;
+
+			float3 pos = ai->cb->GetUnitPos(it->first);
+			// TODO eliminate constant - 1400 is pointer range
+			numenemies = ai->cb->GetEnemyUnits(enemies, pos, 1400);
+			bool stopMoving = false;
+			int foundid = -1;
+			for (int i = 0; i<numenemies; ++i) {
+				const UnitDef* unitdef = ai->cb->GetUnitDef(enemies[i]);
+				std::string name = unitdef->name;
+				if (name == "bit" || name == "packet" || name == "exploit" || name == "bug") {
+					// target not worthy firing at, but we should stop moving anyway
+					stopMoving = true;
+					continue;
+				}
+				else {
+					foundid = enemies[i];
+					break;
+				}
+			}
+			if (foundid != -1) {
+				Command attack;
+				attack.id = CMD_ATTACK;
+				attack.AddParam(foundid);
+				ai->cb->GiveOrder(myid, &attack);
+			} else if (stopMoving) {
+				Command stop;
+				stop.id = CMD_STOP;
+				ai->cb->GiveOrder(myid, &stop);
+			}
+		}
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 
 void TopLevelAI::InitBattleGroups()
@@ -536,6 +679,7 @@ void TopLevelAI::InitBattleGroups()
 		currentBattleGroup = 1;
 
 		lastSwapTime = -10000;
+		attackStartHealth = 1;
 	}
 }
 
@@ -620,4 +764,10 @@ void TopLevelAI::UnitFinished(Unit* unit)
 	if (unit->is_constructor)
 		--queuedConstructors;
 	assert(queuedConstructors >= 0);
+}
+
+void TopLevelAI::UnitIdle(Unit* unit)
+{
+	if (unit->is_base)
+		FindBaseBuildGoals();
 }
