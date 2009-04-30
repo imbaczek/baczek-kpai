@@ -472,41 +472,40 @@ void TopLevelAI::FindGoalsGather()
 	// if there are no expansions, gather at base
 	if (expansions->units.empty()) {
 		groups[currentBattleGroup].rallyPoint = gatherSpot;
-		return;
-	}
-
-	// better spot - expansion closest to enemy 
-	// TODO cache use of FindLocalMinima
-	std::vector<int> values;
-	std::vector<float3> positions;
-	ai->influence->FindLocalMinima(256, values, positions);
-	
-	// first, find minimum is closest to our base
-	// then, find which expansion is closest to this minimum
-	// gather there
-	found = -1;
-	sqdist = FLT_MAX;
-	for (int i = 0; i<values.size(); ++i) {
-		if (values[i] >= 0)
-			continue;
-		int uid;
-		float tmp = bases->SqDistanceClosestUnit(positions[i], &uid, NULL);
-		// less than 0 means not reachable
-		if (tmp >= 0 && tmp < sqdist) {
-			sqdist = tmp;
-			found = i;
+	} else {
+		// better spot - expansion closest to enemy 
+		// TODO cache use of FindLocalMinima
+		std::vector<int> values;
+		std::vector<float3> positions;
+		ai->influence->FindLocalMinima(256, values, positions);
+		
+		// first, find minimum is closest to our base
+		// then, find which expansion is closest to this minimum
+		// gather there
+		found = -1;
+		sqdist = FLT_MAX;
+		for (int i = 0; i<values.size(); ++i) {
+			if (values[i] >= 0)
+				continue;
+			int uid;
+			float tmp = bases->SqDistanceClosestUnit(positions[i], &uid, NULL);
+			// less than 0 means not reachable
+			if (tmp >= 0 && tmp < sqdist) {
+				sqdist = tmp;
+				found = i;
+			}
+		}
+		// if not found, bail out
+		if (found == -1) {
+			groups[currentBattleGroup].rallyPoint = gatherSpot;
+		} else {
+			// now, find the expansion
+			int uid;
+			expansions->SqDistanceClosestUnit(positions[found], &uid, NULL);
+			// set the rally point
+			groups[currentBattleGroup].rallyPoint = random_offset_pos(ai->cb->GetUnitPos(uid), 256, 768);
 		}
 	}
-	// if not found, bail out
-	if (found == -1) {
-		groups[currentBattleGroup].rallyPoint = gatherSpot;
-		return;
-	}
-	// now, find the expansion
-	int uid;
-	expansions->SqDistanceClosestUnit(positions[found], &uid, NULL);
-	// set the rally point
-	groups[currentBattleGroup].rallyPoint = random_offset_pos(ai->cb->GetUnitPos(uid), 256, 768);
 
 	// issue retreat goals every 30s or so
 	int frameNum = ai->cb->GetCurrentFrame();
@@ -750,7 +749,7 @@ void TopLevelAI::RetreatGroup(UnitGroupAI *group, const float3 &dest)
 	Goal* goal = Goal::GetGoal(Goal::CreateGoal(10, RETREAT));
 	goal->params.push_back(dest);
 	// FIXME move constant to data file
-	goal->timeoutFrame = ai->cb->GetCurrentFrame() + 30*GAME_SPEED;
+	goal->timeoutFrame = ai->cb->GetCurrentFrame() + 15*GAME_SPEED;
 	group->AddGoal(goal);
 }
 
