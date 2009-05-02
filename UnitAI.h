@@ -40,6 +40,8 @@ public:
 	int FindSpamUnitDefId();
 
 	void CompleteCurrentGoal();
+	void SuspendCurrentGoal();
+	void ContinueCurrentGoal();
 };
 
 bool operator<(const UnitAI& a, const UnitAI& b);

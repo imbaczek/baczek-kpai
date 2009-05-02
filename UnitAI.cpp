@@ -58,13 +58,17 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 
 	if (currentGoalId >= 0) {
 		Goal* current = Goal::GetGoal(currentGoalId);
-		if (current && current->is_executing() && current->priority >= goal->priority) {
-			return PROCESS_BREAK;
+		if (current) {
+			if (current->is_executing() && current->priority >= goal->priority) {
+				return PROCESS_BREAK;
+			}
 		}
 	}
 
 	if (goal->is_executing()) {
 		return PROCESS_BREAK;
+	} else if (goal->is_restarted()) {
+		goal->do_continue();
 	}
 
 	ailog->info() << "EXECUTE GOAL: Unit " << owner->id << " executing goal " << goal->id << " type " << goal->type << std::endl;
@@ -249,4 +253,24 @@ void UnitAI::CompleteCurrentGoal()
 	}
 	currentGoalId = -1;
 	owner->is_producing = false;
+}
+
+void UnitAI::SuspendCurrentGoal()
+{
+	if (currentGoalId >= 0) {
+		Goal* currentGoal = Goal::GetGoal(currentGoalId);
+		if (currentGoal && !currentGoal->is_finished()) {
+			currentGoal->suspend();
+		}
+	}
+}
+
+void UnitAI::ContinueCurrentGoal()
+{
+	if (currentGoalId >= 0) {
+		Goal* currentGoal = Goal::GetGoal(currentGoalId);
+		if (currentGoal && currentGoal->is_suspended()) {
+			currentGoal->continue_();
+		}
+	}
 }

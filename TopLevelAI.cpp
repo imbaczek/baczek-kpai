@@ -634,6 +634,7 @@ void TopLevelAI::FindPointerTargets()
 			float3 pos = ai->cb->GetUnitPos(it->first);
 			// TODO eliminate constant - 1400 is pointer range
 			numenemies = ai->cb->GetEnemyUnits(enemies, pos, 1400);
+			int smallTargets = 0;
 			bool stopMoving = false;
 			int foundid = -1;
 			for (int i = 0; i<numenemies; ++i) {
@@ -641,7 +642,7 @@ void TopLevelAI::FindPointerTargets()
 				std::string name = unitdef->name;
 				if (name == "bit" || name == "packet" || name == "exploit" || name == "bug") {
 					// target not worthy firing at, but we should stop moving anyway
-					stopMoving = true;
+					++smallTargets;
 					continue;
 				}
 				else {
@@ -650,14 +651,28 @@ void TopLevelAI::FindPointerTargets()
 				}
 			}
 			if (foundid != -1) {
+				// suspend goal and attack
+				assert(ai->GetUnit(myid)->ai);
+				ai->GetUnit(myid)->ai->SuspendCurrentGoal();
+
 				Command attack;
 				attack.id = CMD_ATTACK;
 				attack.AddParam(foundid);
 				ai->cb->GiveOrder(myid, &attack);
-			} else if (stopMoving) {
+			} else if (randint(0, smallTargets) > 5) { // FIXME move constant to data
+				// if there is a lot of enemies nearby, suspend current goal and stop
+				assert(ai->GetUnit(myid)->ai);
+				ai->GetUnit(myid)->ai->SuspendCurrentGoal();
+
 				Command stop;
 				stop.id = CMD_STOP;
 				ai->cb->GiveOrder(myid, &stop);
+			} else {
+				// continue goal if it was aborted recently
+				// FIXME make this work
+				// TODO keep account of which goals were suspended here
+				assert(ai->GetUnit(myid)->ai);
+				ai->GetUnit(myid)->ai->ContinueCurrentGoal();
 			}
 		}
 	}

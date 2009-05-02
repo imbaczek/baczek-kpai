@@ -75,6 +75,7 @@ public:
 	static const int ABORTED = 0x0004;
 	static const int EXECUTING = 0x0008;
 	static const int SUSPENDED = 0x0010;
+	static const int TO_CONTINUE = 0x0020;
 
 	static int global_id;
 
@@ -123,6 +124,8 @@ public:
 
 	bool is_finished() { return (bool)(flags & FINISHED); }
 	bool is_executing() { return (bool)(flags & EXECUTING); }
+	bool is_suspended() { return (bool)(flags & SUSPENDED); }
+	bool is_restarted() { return (bool)(flags & TO_CONTINUE); }
 
 	void start() {
 		assert(!is_finished());
@@ -138,7 +141,7 @@ public:
 	}
 	void continue_() {
 		assert(!is_finished());
-		flags = EXECUTING;
+		flags = TO_CONTINUE;
 		ailog->info() << "continuing goal " << id << " (parent " << parent << ")" << std::endl;
 		onContinue(*this);
 	}
@@ -153,6 +156,11 @@ public:
 		flags = FINISHED | ABORTED;
 		ailog->info() << "aborting goal " << id << " (parent " << parent << ")" << std::endl;
 		onAbort(*this);
+	}
+
+	void do_continue() {
+		flags = EXECUTING;
+		ailog->info() << "goal " << id << " reprocessed after suspend" << std::endl;
 	}
 
 	static int CreateGoal(int priority, Type type);
