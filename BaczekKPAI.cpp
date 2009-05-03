@@ -14,6 +14,7 @@
 #include "AIExport.h"
 #include "ExternalAI/IGlobalAICallback.h"
 #include "ExternalAI/IAICheats.h"
+#include "Sim/MoveTypes/MoveInfo.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Features/FeatureDef.h"
 #include "CUtils/Util.h" // we only use the defines
@@ -395,7 +396,7 @@ inline float BaczekKPAI::EstimateSqDistancePF(int unitID, const float3& start, c
 
 float BaczekKPAI::EstimateSqDistancePF(const UnitDef* unitdef, const float3& start, const float3& end)
 {
-	int pathId = cb->InitPath(start, end, unitdef->moveType);
+	int pathId = cb->InitPath(start, end, unitdef->movedata->pathType);
 	float sqdist = 0;
 	float3 prev = start;
 
@@ -440,7 +441,7 @@ inline float BaczekKPAI::EstimateDistancePF(int unitID, const float3& start, con
 
 float BaczekKPAI::EstimateDistancePF(const UnitDef* unitdef, const float3& start, const float3& end)
 {
-	int pathId = cb->InitPath(start, end, unitdef->moveType);
+	int pathId = cb->InitPath(start, end, unitdef->movedata->pathType);
 	float dist = 0;
 	float3 prev = start;
 
