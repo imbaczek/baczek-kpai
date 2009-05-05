@@ -159,6 +159,7 @@ public:
 	}
 
 	void do_continue() {
+		assert(is_restarted());
 		flags = EXECUTING;
 		ailog->info() << "goal " << id << " reprocessed after suspend" << std::endl;
 	}

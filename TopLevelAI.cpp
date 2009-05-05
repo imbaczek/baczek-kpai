@@ -595,7 +595,8 @@ void TopLevelAI::FindBaseBuildGoals()
 		totalUnits += groups[i].units.size();
 	}
 
-	switch (totalUnits > 10 ? randint(0, 2) : 0) {
+	// XXX
+	switch (totalUnits > 10 ? randint(0, 2) : 2) {
 		case 0: { // bits
 			for (int i = 0; i<randint(1, 5); ++i) {
 				Command build;
@@ -653,15 +654,17 @@ void TopLevelAI::FindPointerTargets()
 			if (foundid != -1) {
 				// suspend goal and attack
 				assert(ai->GetUnit(myid)->ai);
+				ailog->info() << "pointer " << myid << " suspending goal due to good target" << std::endl;
 				ai->GetUnit(myid)->ai->SuspendCurrentGoal();
 
 				Command attack;
 				attack.id = CMD_ATTACK;
 				attack.AddParam(foundid);
 				ai->cb->GiveOrder(myid, &attack);
-			} else if (randint(0, smallTargets) > 5) { // FIXME move constant to data
+			} else if (smallTargets >= 1) { // FIXME move constant to data
 				// if there is a lot of enemies nearby, suspend current goal and stop
 				assert(ai->GetUnit(myid)->ai);
+				ailog->info() << "pointer " << myid << " suspending goal due to danger" << std::endl;
 				ai->GetUnit(myid)->ai->SuspendCurrentGoal();
 
 				Command stop;
@@ -672,6 +675,10 @@ void TopLevelAI::FindPointerTargets()
 				// FIXME make this work
 				// TODO keep account of which goals were suspended here
 				assert(ai->GetUnit(myid)->ai);
+				Goal* goal = Goal::GetGoal(ai->GetUnit(myid)->ai->currentGoalId);
+				if (goal && goal->is_suspended()) {
+					ailog->info() << "pointer " << myid << " continuing goal after suspension" << std::endl;
+				}
 				ai->GetUnit(myid)->ai->ContinueCurrentGoal();
 			}
 		}
@@ -727,6 +734,8 @@ void TopLevelAI::AssignUnitToGroup(Unit* unit)
 
 void TopLevelAI::HandleExpansionCommands(Unit* expansion)
 {
+	return; //XXX
+
 	assert(expansion);
 	if (!expansion->ai)
 		expansion->ai.reset(new UnitAI(ai, expansion));
@@ -784,4 +793,10 @@ void TopLevelAI::UnitIdle(Unit* unit)
 {
 	if (unit->is_base)
 		FindBaseBuildGoals();
+	
+	if (unit->ai) {
+		Goal* g = Goal::GetGoal(unit->ai->currentGoalId);
+		if (g && !g->is_suspended())
+			unit->ai->CompleteCurrentGoal();
+	}
 }

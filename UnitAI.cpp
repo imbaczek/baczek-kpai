@@ -150,7 +150,27 @@ void UnitAI::Update()
 	if (frameNum % 30 == 0) {
 		std::sort(goals.begin(), goals.end(), goal_priority_less());
 		DumpGoalStack("Unit");
+		CheckContinueGoal();
 		ProcessGoalStack(frameNum);
+	}
+}
+
+
+void UnitAI::CheckContinueGoal()
+{
+	if (currentGoalId < 0) {
+		return;
+	}
+
+	Goal* current = Goal::GetGoal(currentGoalId);
+	if (!current) {
+		currentGoalId = -1;
+		return;
+	}
+
+	if (current->is_restarted()) {
+		ailog->info() << "restarting goal " << current->id << " in CheckContinueGoal" << std::endl;
+		current->do_continue();
 	}
 }
 
