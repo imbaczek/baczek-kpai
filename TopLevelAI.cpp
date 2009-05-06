@@ -596,7 +596,7 @@ void TopLevelAI::FindBaseBuildGoals()
 	}
 
 	// XXX
-	switch (totalUnits > 10 ? randint(0, 2) : 2) {
+	switch (totalUnits > 10 ? randint(0, 2) : 0) {
 		case 0: { // bits
 			for (int i = 0; i<randint(1, 5); ++i) {
 				Command build;
@@ -760,8 +760,6 @@ void TopLevelAI::AssignUnitToGroup(Unit* unit)
 
 void TopLevelAI::HandleExpansionCommands(Unit* expansion)
 {
-	return; //XXX
-
 	assert(expansion);
 	if (!expansion->ai)
 		expansion->ai.reset(new UnitAI(ai, expansion));
