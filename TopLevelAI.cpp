@@ -620,6 +620,14 @@ void TopLevelAI::FindBaseBuildGoals()
 	}
 }
 
+
+struct RemoveSuspendedPointerGoal : std::unary_function<Goal&, void>
+{
+	TopLevelAI& self;
+	RemoveSuspendedPointerGoal(TopLevelAI& s):self(s) {}
+	void operator()(Goal& g) { self.suspendedPointerGoals.erase(g.id); }
+};
+
 void TopLevelAI::FindPointerTargets()
 {
 	int enemies[MAX_UNITS];
@@ -651,11 +659,20 @@ void TopLevelAI::FindPointerTargets()
 					break;
 				}
 			}
+
+			assert(ai->GetUnit(myid)->ai);
+			Goal* goal = Goal::GetGoal(ai->GetUnit(myid)->ai->currentGoalId);
+			UnitAI* unitai = ai->GetUnit(myid)->ai.get();
+
 			if (foundid != -1) {
 				// suspend goal and attack
-				assert(ai->GetUnit(myid)->ai);
 				ailog->info() << "pointer " << myid << " suspending goal due to good target" << std::endl;
-				ai->GetUnit(myid)->ai->SuspendCurrentGoal();
+				if (goal) {
+					unitai->SuspendCurrentGoal();
+					goal->OnAbort(RemoveSuspendedPointerGoal(*this));
+					goal->OnComplete(RemoveSuspendedPointerGoal(*this));
+					goal->OnContinue(RemoveSuspendedPointerGoal(*this));
+				}
 
 				Command attack;
 				attack.id = CMD_ATTACK;
@@ -663,9 +680,13 @@ void TopLevelAI::FindPointerTargets()
 				ai->cb->GiveOrder(myid, &attack);
 			} else if (smallTargets >= 1) { // FIXME move constant to data
 				// if there is a lot of enemies nearby, suspend current goal and stop
-				assert(ai->GetUnit(myid)->ai);
 				ailog->info() << "pointer " << myid << " suspending goal due to danger" << std::endl;
-				ai->GetUnit(myid)->ai->SuspendCurrentGoal();
+				if (goal) {
+					unitai->SuspendCurrentGoal();
+					goal->OnAbort(RemoveSuspendedPointerGoal(*this));
+					goal->OnComplete(RemoveSuspendedPointerGoal(*this));
+					goal->OnContinue(RemoveSuspendedPointerGoal(*this));
+				}
 
 				Command stop;
 				stop.id = CMD_STOP;
@@ -674,12 +695,11 @@ void TopLevelAI::FindPointerTargets()
 				// continue goal if it was aborted recently
 				// FIXME make this work
 				// TODO keep account of which goals were suspended here
-				assert(ai->GetUnit(myid)->ai);
-				Goal* goal = Goal::GetGoal(ai->GetUnit(myid)->ai->currentGoalId);
-				if (goal && goal->is_suspended()) {
+
+				if (goal && goal->is_suspended() && suspendedPointerGoals.find(goal->id) != suspendedPointerGoals.end()) {
 					ailog->info() << "pointer " << myid << " continuing goal after suspension" << std::endl;
+					ai->GetUnit(myid)->ai->ContinueCurrentGoal();
 				}
-				ai->GetUnit(myid)->ai->ContinueCurrentGoal();
 			}
 		}
 	}

@@ -23,6 +23,7 @@ public:
 	typedef boost::ptr_vector<UnitGroupAI> UnitGroupVector;
 	boost::ptr_vector<UnitGroupAI> groups;
 	std::set<int> skippedGoals;
+	std::set<int> suspendedPointerGoals;
 
 	int currentBattleGroup;
 	int currentAssignGroup;
