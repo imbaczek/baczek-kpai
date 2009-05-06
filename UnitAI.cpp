@@ -69,6 +69,8 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 		return PROCESS_BREAK;
 	} else if (goal->is_restarted()) {
 		goal->do_continue();
+	} else if (goal->is_suspended()) {
+		return PROCESS_BREAK;
 	}
 
 	ailog->info() << "EXECUTE GOAL: Unit " << owner->id << " executing goal " << goal->id << " type " << goal->type << std::endl;
