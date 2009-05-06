@@ -8,6 +8,7 @@
 #include <boost/ptr_container/ptr_unordered_map.hpp>
 #include <boost/signal.hpp>
 #include <boost/variant.hpp>
+#include <boost/thread.hpp>
 
 #include "float3.h"
 
@@ -194,8 +195,12 @@ public:
 typedef std::priority_queue<int, std::vector<int>, goal_priority_less> GoalQueue;
 typedef std::vector<int> GoalStack;
 
+extern boost::mutex _global_goal_mutex;
+
 inline Goal* Goal::GetGoal(int id)
 {
+	boost::mutex::scoped_lock(_global_goal_mutex);
+
 	GoalSet::iterator it = g_goals.find(id);
 	if (it == g_goals.end())
 		return 0;
@@ -207,6 +212,9 @@ inline void Goal::RemoveGoal(Goal* g)
 	assert(g);
 	if (!g->is_finished())
 		g->abort();
+
+	boost::mutex::scoped_lock(_global_goal_mutex);
+
 	GoalSet::iterator it = g_goals.find(g->id);
 	if (it != g_goals.end()) {
 		g_goals.release(it);
