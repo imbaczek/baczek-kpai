@@ -172,7 +172,7 @@ void UnitAI::CheckContinueGoal()
 
 	if (current->is_restarted()) {
 		ailog->info() << "restarting goal " << current->id << " in CheckContinueGoal" << std::endl;
-		current->do_continue();
+		ProcessGoal(current);
 	}
 }
 
