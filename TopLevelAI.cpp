@@ -669,9 +669,12 @@ void TopLevelAI::FindPointerTargets()
 				ailog->info() << "pointer " << myid << " suspending goal due to good target" << std::endl;
 				if (goal) {
 					unitai->SuspendCurrentGoal();
-					goal->OnAbort(RemoveSuspendedPointerGoal(*this));
-					goal->OnComplete(RemoveSuspendedPointerGoal(*this));
-					goal->OnContinue(RemoveSuspendedPointerGoal(*this));
+					if (suspendedPointerGoals.find(goal->id) == suspendedPointerGoals.end()) {
+						suspendedPointerGoals.insert(goal->id);
+						goal->OnAbort(RemoveSuspendedPointerGoal(*this));
+						goal->OnComplete(RemoveSuspendedPointerGoal(*this));
+						goal->OnContinue(RemoveSuspendedPointerGoal(*this));
+					}
 				}
 
 				Command attack;
@@ -683,9 +686,12 @@ void TopLevelAI::FindPointerTargets()
 				ailog->info() << "pointer " << myid << " suspending goal due to danger" << std::endl;
 				if (goal) {
 					unitai->SuspendCurrentGoal();
-					goal->OnAbort(RemoveSuspendedPointerGoal(*this));
-					goal->OnComplete(RemoveSuspendedPointerGoal(*this));
-					goal->OnContinue(RemoveSuspendedPointerGoal(*this));
+					if (suspendedPointerGoals.find(goal->id) == suspendedPointerGoals.end()) {
+						suspendedPointerGoals.insert(goal->id);
+						goal->OnAbort(RemoveSuspendedPointerGoal(*this));
+						goal->OnComplete(RemoveSuspendedPointerGoal(*this));
+						goal->OnContinue(RemoveSuspendedPointerGoal(*this));
+					}
 				}
 
 				Command stop;
