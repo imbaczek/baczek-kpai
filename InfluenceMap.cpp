@@ -31,6 +31,8 @@ configName(cfg)
 	BOOST_FOREACH(std::vector<int>& r, map) {
 		r.resize(maph);
 	}
+
+	lastMinimaFrame = -1;
 }
 
 InfluenceMap::~InfluenceMap()
@@ -87,6 +89,16 @@ struct Visitor {
 
 void InfluenceMap::FindLocalMinima(float radius, std::vector<int> &values, std::vector<float3> &positions)
 {
+	// cache results
+	int frameNum = ai->cb->GetCurrentFrame();
+	if (lastMinimaFrame == frameNum) {
+		values = minimaCachedValues;
+		positions = minimaCachedPositions;
+		return;
+	} else {
+		lastMinimaFrame = frameNum;
+	}
+
 	float r = radius*radius*scalex*scaley;
 	values.clear();
 	positions.clear();
@@ -110,10 +122,15 @@ void InfluenceMap::FindLocalMinima(float radius, std::vector<int> &values, std::
 					}
 				}
 			}
-			if (found) {
+			// XXX hack: do not insert 0 for better speed
+			if (found && map[x][y] != 0) {
+				// found a minimum, but check if there are units here
+				float3 pos = float3(x/scalex, 0, y/scaley);
+				pos.y = ai->GetGroundHeight(pos.x, pos.z);
 				values.push_back(map[x][y]);
-				positions.push_back(float3(x/scalex, 0, y/scaley));
-				rtree.Insert(positions.size()-1, bounds(x/scalex, x/scaley, 0, 0));
+				positions.push_back(pos);
+				rtree.Insert(positions.size()-1, bounds(pos.x, pos.z, 0, 0));
+				ai->cb->CreateLineFigure(pos + float3(0, 100, 0), pos, 5, 5, 30*GAME_SPEED, 0);
 			}
 not_found:  ;
 		}

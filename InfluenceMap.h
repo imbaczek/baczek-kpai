@@ -4,12 +4,18 @@
 #include <string>
 #include <vector>
 
+#include "float3.h"
+
 class BaczekKPAI;
 
 class InfluenceMap
 {
 protected:
 	BaczekKPAI* ai;
+
+	int lastMinimaFrame; //<? for caching purposes
+	std::vector<int> minimaCachedValues;
+	std::vector<float3> minimaCachedPositions;
 
 public:
 	InfluenceMap(BaczekKPAI* ai, std::string);
