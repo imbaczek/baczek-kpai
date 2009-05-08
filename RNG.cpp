@@ -1,4 +1,5 @@
 #include <cmath>
+#include <ctime>
 #include <boost/random.hpp>
 #include <boost/math/constants/constants.hpp>
 
@@ -8,7 +9,25 @@
 
 using namespace std;
 
-static boost::mt19937 rng;                 
+static boost::mt19937 rng;
+
+static bool is_initialized = false;
+
+void init_rng()
+{
+	if (is_initialized)
+		return;
+
+	is_initialized = true;
+	rng.seed(time(NULL));
+}
+
+
+void init_rng(boost::uint32_t seed)
+{
+	is_initialized = true;
+	rng.seed(seed);
+}
 
 
 // thanks http://www.bnikolic.co.uk/blog/cpp-boost-uniform01.html for pitfall warning

@@ -70,6 +70,8 @@ Log* ailog = 0;
 
 void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 {
+	init_rng();
+
 	this->callback=callback;
 	cb = callback->GetAICallback();
 	cheatcb = callback->GetCheatInterface();

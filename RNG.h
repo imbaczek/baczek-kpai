@@ -1,6 +1,12 @@
 #pragma once
 
+#include <boost/cstdint.hpp>
+
 #include "float3.h"
+
+
+void init_rng();
+void init_rng(boost::uint32_t seed);
 
 float random();
 float random(float start, float end);
