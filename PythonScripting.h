@@ -39,4 +39,15 @@ public:
 	void DumpStatus(int framenum, const std::vector<float3>& geos,
 					const std::vector<float3>& friendlies,
 					const std::vector<float3>& enemies);
+
+	int GetBuilderRetreatTimeout(int frameNum);
+
+	template<typename T> T extract_default(bp::object obj, T def)
+	{
+		try {
+			return extract<T>(obj);
+		} catch (bp::error_already_set&) {
+			return def;
+		}
+	}
 };

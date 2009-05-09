@@ -166,31 +166,35 @@ PythonScripting::~PythonScripting()
 {
 }
 
+#define PY_FUNC_SKELETON(NAME, ...) \
+	object ret; \
+	if (hasattr(init, NAME)) { \
+		try { \
+			ret = init.attr(NAME) (__VA_ARGS__); \
+		} catch (error_already_set&) { \
+			PyErr_Print(); \
+		} \
+	} else { \
+		ailog->info() << "py: " NAME "(" #__VA_ARGS__ ") not defined" << std::endl; \
+	}
+
+
 
 void PythonScripting::GameFrame(int framenum)
 {
-	if (hasattr(init, "game_frame")) {
-		try {
-			init.attr("game_frame")(teamId, framenum);
-		} catch (error_already_set&) {
-			PyErr_Print();
-		}
-	} else {
-		ailog->info() << "py: game_frame(int) not defined" << std::endl;
-	}
+	PY_FUNC_SKELETON("game_frame", teamId, framenum);
 }
 
 void PythonScripting::DumpStatus(int framenum, const std::vector<float3>& geos,
 								 const std::vector<float3>& friendlies,
 								 const std::vector<float3>& enemies)
 {
-	if (hasattr(init, "dump_status")) {
-		try {
-			init.attr("dump_status")(teamId, framenum, geos, friendlies, enemies);
-		} catch (error_already_set&) {
-			PyErr_Print();
-		}
-	} else {
-		ailog->info() << "py: dump_status(int, int, list, list, list) not defined" << std::endl;
-	}
+	PY_FUNC_SKELETON("dump_status", teamId, framenum, geos, friendlies, enemies);
+}
+
+
+int PythonScripting::GetBuilderRetreatTimeout(int frameNum)
+{
+	PY_FUNC_SKELETON("get_builder_retreat_timeout", frameNum);
+	return extract_default<int>(ret, 0);
 }
