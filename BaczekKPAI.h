@@ -103,6 +103,11 @@ public:
 	MyFrame *frame;
 #endif
 
+	std::vector<const UnitDef*> unitDefById;
+	void InitializeUnitDefs();
+	const UnitDef* GetUnitDefById(int id) { return unitDefById[id]; }
+
+
 	Unit* GetUnit(int id) { return unitTable[id]; }
 	
 	void GetAllUnitsInRadius(std::vector<int>& vec, float3 pos, float radius);
@@ -115,6 +120,18 @@ public:
 
 	// heightmap
 	float GetGroundHeight(float x, float y);
+
+	// easier spatial queries
+	void GetEnemiesInRadius(float3 pos, float radius, std::vector<int>& output)
+	{
+		int enemies[MAX_UNITS];
+		int numenemies;
+		numenemies = cheatcb->GetEnemyUnits(enemies, pos, 1536);
+		output.clear();
+		output.reserve(numenemies);
+		for (int i=0; i<numenemies; ++i)
+			output.push_back(enemies[i]);
+	}
 };
 
 #endif // !defined(AFX_GroupAI_H__10718E36_5CDF_4CD4_8D90_F41311DD2694__INCLUDED_)

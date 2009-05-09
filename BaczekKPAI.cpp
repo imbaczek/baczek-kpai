@@ -88,6 +88,8 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	ailog->info() << "Logging initialized.\n";
 	ailog->info() << "Baczek KP AI compiled on " __TIMESTAMP__ "\n";
 
+	InitializeUnitDefs();
+
 	statusName = aiexport_getDataDir(true, "status.txt");
 	map.h = cb->GetMapHeight();
 	map.w = cb->GetMapWidth();
@@ -493,3 +495,16 @@ float BaczekKPAI::GetGroundHeight(float x, float y)
 
 	return cb->GetHeightMap()[xsquare + ysquare * map.h];
 }
+
+//////////////////////////////////////////////////////////////////
+
+void BaczekKPAI::InitializeUnitDefs()
+{
+	int num = cb->GetNumUnitDefs();
+	const UnitDef** ar = (const UnitDef **)alloca(num*sizeof(void*));
+	cb->GetUnitDefList(ar);
+	unitDefById.reserve(num);
+	std::copy(ar, ar+num, std::back_inserter(unitDefById));
+	ailog->info() << "loaded " << num << " unitdefs" << std::endl;
+}
+
