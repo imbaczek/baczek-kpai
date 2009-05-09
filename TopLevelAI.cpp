@@ -210,7 +210,7 @@ void TopLevelAI::FindGoalsExpansion(std::vector<float3>& badSpots)
 		}
 
 		// TODO make constant configurable
-		float k = 100;
+		float k = 200;
 		float divider = (float)(ai->map.w*ai->map.w + ai->map.h*ai->map.h);
 		int priority = influence - (int)((minDistance/divider)*k);
 		ailog->info() << "geo at " << geo << " distance to nearest base squared " << minDistance
@@ -317,7 +317,7 @@ void TopLevelAI::FindGoalsRetreatBuilders(std::vector<float3>& badSpots)
 				Goal* goal = Goal::GetGoal(Goal::CreateGoal(1, RETREAT));
 				goal->params.push_back(dest);
 				// FIXME move constant to data file
-				goal->timeoutFrame = ai->cb->GetCurrentFrame() + 30*GAME_SPEED;
+				goal->timeoutFrame = ai->python->GetBuilderRetreatTimeout(ai->cb->GetCurrentFrame());
 				builders->AddGoal(goal);
 				builderRetreatGoalId = goal->id;
 			}
@@ -442,7 +442,12 @@ void TopLevelAI::FindGoalsGather()
 {
 	// initial gather spot: base
 	float3 gatherSpot = random_offset_pos(bases->GetGroupMidPos(), 256, 768);
+	float3 rootSpot = gatherSpot + float3(0, 100, 0); // only for debugging
+
+	std::vector<int> values;
+	std::vector<float3> positions;
 	
+	// assign group
 	// find enemies near base (or constructors or expansions)
 	int enemies[MAX_UNITS];
 	int numenemies;
@@ -460,25 +465,46 @@ void TopLevelAI::FindGoalsGather()
 			found = enemies[i];
 		}
 	}
+	
+	// no enemies near base, find some near expansion
+	if (found == -1) {
+		ai->influence->FindLocalMinima(256, values, positions);
+		found = -1;
+		sqdist = FLT_MAX;
+		std::vector<int> foes;
+		for (int i = 0; i<values.size(); ++i) {
+			int uid;
+			float tmp = expansions->SqDistanceClosestUnit(positions[i], &uid, NULL);
+			// less than 0 means not reachable
+			if (tmp >= 0 && tmp < sqdist && sqdist < 1536*1536) {
+				ai->GetEnemiesInRadius(positions[i], 512, foes);
+				if (foes.empty())
+					continue;
+				sqdist = tmp;
+				found = i;
+			}
+		}
+		if (found >= 0)
+			foundSpot = positions[found];
+	}
+
 	// if no enemies found, stay at base
 	if (found != -1) {
 		groups[currentAssignGroup].rallyPoint = foundSpot;
-		ai->cb->SendTextMsg("GATHER: reacting to enemy", 0);
-		ai->cb->CreateLineFigure(gatherSpot, foundSpot, 3, 1, 100, 0);
+		ai->cb->SendTextMsg("GATHER: reacting to enemy near base", 0);
 	}
 	else
 		groups[currentAssignGroup].rallyPoint = gatherSpot;
 
+	// battle group
 	// if there are no expansions, gather at base
 	if (expansions->units.empty()) {
 		groups[currentBattleGroup].rallyPoint = gatherSpot;
 	} else {
 		// better spot - expansion closest to enemy 
-		// TODO cache use of FindLocalMinima
-		std::vector<int> values;
-		std::vector<float3> positions;
-		ai->influence->FindLocalMinima(256, values, positions);
-		
+		if (values.empty())
+			ai->influence->FindLocalMinima(256, values, positions);
+
 		// first, find minimum is closest to our base
 		// then, find which expansion is closest to this minimum
 		// gather there
@@ -512,8 +538,14 @@ void TopLevelAI::FindGoalsGather()
 	if (lastRetreatTime + 30*GAME_SPEED < frameNum) {
 		lastRetreatTime = frameNum;
 		RetreatGroup(&groups[currentAssignGroup]);
-		if (attackState == AST_GATHER)
+		ai->cb->CreateLineFigure(rootSpot, groups[currentAssignGroup].rallyPoint, 5, 1, 300, 0);
+		ai->cb->SendTextMsg("retreating assign group", 0);
+
+		if (attackState == AST_GATHER) {
 			RetreatGroup(&groups[currentBattleGroup]);
+			ai->cb->CreateLineFigure(rootSpot, groups[currentBattleGroup].rallyPoint, 5, 1, 300, 0);
+			ai->cb->SendTextMsg("retreating battle group", 0);
+		}
 	}
 }
 
@@ -552,6 +584,10 @@ void TopLevelAI::FindGoalsAttack()
 	std::vector<int> values;
 	std::vector<float3> positions;
 	ai->influence->FindLocalMinima(256, values, positions);
+
+	if (values.empty())
+		return;
+
 	// find maximum minimum, move there, face minimim minimum (doesn't sound too good, yeah)
 	int maxmin = INT_MIN;
 	int maxminidx = -1;
@@ -571,8 +607,13 @@ void TopLevelAI::FindGoalsAttack()
 	if (!groups.empty()) {
 		if (minminidx != maxminidx) {
 			groups[currentBattleGroup].MoveTurnTowards(positions[minminidx], positions[maxminidx]);
-		} else {
+			ai->cb->CreateLineFigure(positions[minminidx]+float3(0, 100, 0), positions[maxminidx], 5, 5, 600, 0);
+		} else if (minminidx != -1) {
 			groups[currentBattleGroup].MoveTurnTowards(positions[minminidx], float3(ai->map.w*0.5f, 0, ai->map.h*0.5f));
+			ai->cb->CreateLineFigure(positions[minminidx]+float3(0, 100, 0), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f), 5, 5, 600, 0);
+		} else {
+			groups[currentBattleGroup].MoveTurnTowards(ai->cb->GetUnitPos(bases->units.begin()->first), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f));
+			ai->cb->CreateLineFigure(ai->cb->GetUnitPos(bases->units.begin()->first)+float3(0, 100, 0), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f), 5, 5, 600, 0);
 		}
 	}
 }
@@ -648,6 +689,7 @@ void TopLevelAI::FindPointerTargets()
 			int foundid = -1;
 			for (int i = 0; i<numenemies; ++i) {
 				const UnitDef* unitdef = ai->cb->GetUnitDef(enemies[i]);
+				assert(unitdef);
 				std::string name = unitdef->name;
 				if (name == "bit" || name == "packet" || name == "exploit" || name == "bug") {
 					// target not worthy firing at, but we should stop moving anyway
@@ -681,30 +723,65 @@ void TopLevelAI::FindPointerTargets()
 				attack.id = CMD_ATTACK;
 				attack.AddParam(foundid);
 				ai->cb->GiveOrder(myid, &attack);
-			} else if (smallTargets >= 1) { // FIXME move constant to data
-				// if there is a lot of enemies nearby, suspend current goal and stop
-				ailog->info() << "pointer " << myid << " suspending goal due to danger" << std::endl;
-				if (goal) {
-					unitai->SuspendCurrentGoal();
-					if (suspendedPointerGoals.find(goal->id) == suspendedPointerGoals.end()) {
-						suspendedPointerGoals.insert(goal->id);
-						goal->OnAbort(RemoveSuspendedPointerGoal(*this));
-						goal->OnComplete(RemoveSuspendedPointerGoal(*this));
-						goal->OnContinue(RemoveSuspendedPointerGoal(*this));
+			} else {
+				// target in range and LOS not found, check for enemy bases or minifacs in range but not LOS
+				numenemies = ai->cheatcb->GetEnemyUnits(enemies, pos, 1400);
+				foundid = -1;
+				for (int i = 0; i<numenemies; ++i) {
+					const UnitDef* unitdef = ai->cheatcb->GetUnitDef(enemies[i]);
+					assert(unitdef);
+					std::string name = unitdef->name;
+					if (name == "kernel" ||  name == "hole" || name == "gateway"
+							|| name == "socket" || name == "window" || name == "port") {
+						foundid = enemies[i];
+						break;
 					}
 				}
 
-				Command stop;
-				stop.id = CMD_STOP;
-				ai->cb->GiveOrder(myid, &stop);
-			} else {
-				// continue goal if it was aborted recently
-				// FIXME make this work
-				// TODO keep account of which goals were suspended here
+				if (foundid != -1) {
+					ailog->info() << "pointer " << myid << " suspending goal due to out-of-los fac target" << std::endl;
+					if (goal) {
+						unitai->SuspendCurrentGoal();
+						if (suspendedPointerGoals.find(goal->id) == suspendedPointerGoals.end()) {
+							suspendedPointerGoals.insert(goal->id);
+							goal->OnAbort(RemoveSuspendedPointerGoal(*this));
+							goal->OnComplete(RemoveSuspendedPointerGoal(*this));
+							goal->OnContinue(RemoveSuspendedPointerGoal(*this));
+						}
+					}
+					float3 nmypos = ai->cheatcb->GetUnitPos(foundid);
+					Command attack;
+					attack.id = CMD_ATTACK;
+					attack.AddParam(nmypos.x);
+					attack.AddParam(nmypos.y);
+					attack.AddParam(nmypos.z);
+					ai->cb->GiveOrder(myid, &attack);
+				}
+				else if (smallTargets >= 1) { // FIXME move constant to data
+					// if there is a lot of enemies nearby, suspend current goal and stop
+					ailog->info() << "pointer " << myid << " suspending goal due to danger" << std::endl;
+					if (goal) {
+						unitai->SuspendCurrentGoal();
+						if (suspendedPointerGoals.find(goal->id) == suspendedPointerGoals.end()) {
+							suspendedPointerGoals.insert(goal->id);
+							goal->OnAbort(RemoveSuspendedPointerGoal(*this));
+							goal->OnComplete(RemoveSuspendedPointerGoal(*this));
+							goal->OnContinue(RemoveSuspendedPointerGoal(*this));
+						}
+					}
 
-				if (goal && goal->is_suspended() && suspendedPointerGoals.find(goal->id) != suspendedPointerGoals.end()) {
-					ailog->info() << "pointer " << myid << " continuing goal after suspension" << std::endl;
-					ai->GetUnit(myid)->ai->ContinueCurrentGoal();
+					Command stop;
+					stop.id = CMD_STOP;
+					ai->cb->GiveOrder(myid, &stop);
+				} else {
+					// continue goal if it was aborted recently
+					// FIXME make this work
+					// TODO keep account of which goals were suspended here
+
+					if (goal && goal->is_suspended() && suspendedPointerGoals.find(goal->id) != suspendedPointerGoals.end()) {
+						ailog->info() << "pointer " << myid << " continuing goal after suspension" << std::endl;
+						ai->GetUnit(myid)->ai->ContinueCurrentGoal();
+					}
 				}
 			}
 		}

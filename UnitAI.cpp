@@ -91,7 +91,9 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 			c.params.push_back(param.z);
 			ai->cb->GiveOrder(owner->id, &c);
 			goal->OnComplete(on_complete_clean_current_goal(this));
+			goal->OnAbort(on_complete_clean_current_goal(this));
 			goal->OnComplete(on_complete_clean_producing(this->owner));
+			goal->OnAbort(on_complete_clean_producing(this->owner));
 			owner->is_producing = true;
 			goal->start();
 			currentGoalId = goal->id;
@@ -149,11 +151,15 @@ void UnitAI::Update()
 {
 	int frameNum = ai->cb->GetCurrentFrame();
 
-	if (frameNum % 30 == 0) {
+	int phase = frameNum % 30;
+
+	if (phase == 0) {
 		std::sort(goals.begin(), goals.end(), goal_priority_less());
 		DumpGoalStack("Unit");
 		CheckContinueGoal();
 		ProcessGoalStack(frameNum);
+	} else if (phase == 1) {
+		CheckBuildValid();
 	}
 }
 
@@ -293,6 +299,51 @@ void UnitAI::ContinueCurrentGoal()
 		Goal* currentGoal = Goal::GetGoal(currentGoalId);
 		if (currentGoal && currentGoal->is_suspended()) {
 			currentGoal->continue_();
+		}
+	}
+}
+
+
+void UnitAI::CheckBuildValid()
+{
+	assert(owner);
+	const CCommandQueue* q = ai->cb->GetCurrentUnitCommands(owner->id);
+	if (q->empty())
+		return;
+
+	// is the first command a "build at pos" command
+	Command c = *q->begin();
+	if (c.id >= 0)
+		return;
+	if (c.params.size() != 3)
+		return;
+
+	float3 pos(c.params[0], c.params[1], c.params[2]);
+	const UnitDef* ud = ai->GetUnitDefById(-c.id);
+	assert(ud);
+
+	std::vector<int> enemies;
+	ai->GetEnemiesInRadius(pos, 64, enemies);
+
+	if (!enemies.empty()) {
+		// we shouldn't be building here, abort
+		// unless of course it wasn't our goal...
+		Goal* goal = Goal::GetGoal(currentGoalId);
+		if (goal && goal->params.size() >= 1 && goal->type == BUILD_EXPANSION) {
+			float3& param = boost::get<float3>(goal->params[0]);
+			if (param.SqDistance2D(pos) < 8*8) {
+				ailog->info() << "aborting construction goal at " << pos << " for builder "
+					<< owner->id << " (goal id " << goal->id << ")" << std::endl;
+				goal->abort();
+				Command stop;
+				stop.id = CMD_STOP;
+				ai->cb->GiveOrder(owner->id, &stop);
+
+				for (std::vector<int>::iterator it = enemies.begin(); it != enemies.end(); ++it) {
+					ai->cb->CreateLineFigure(pos+float3(0, 100, 0), ai->cb->GetUnitPos(*it)+float3(0, 100, 0), 5, 1, 900, 0);
+				}
+				ai->cb->SendTextMsg("build aborted", 0);
+			}
 		}
 	}
 }

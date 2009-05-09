@@ -44,6 +44,8 @@ public:
 	void ContinueCurrentGoal();
 
 	void CheckContinueGoal();
+
+	void CheckBuildValid();
 };
 
 bool operator<(const UnitAI& a, const UnitAI& b);
