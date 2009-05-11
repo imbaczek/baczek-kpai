@@ -323,7 +323,7 @@ void UnitAI::CheckBuildValid()
 	assert(ud);
 
 	std::vector<int> enemies;
-	ai->GetEnemiesInRadius(pos, 64, enemies);
+	ai->GetEnemiesInRadius(pos, 96, enemies);
 
 	if (!enemies.empty()) {
 		// we shouldn't be building here, abort
@@ -340,9 +340,9 @@ void UnitAI::CheckBuildValid()
 				ai->cb->GiveOrder(owner->id, &stop);
 
 				for (std::vector<int>::iterator it = enemies.begin(); it != enemies.end(); ++it) {
-					ai->cb->CreateLineFigure(pos+float3(0, 100, 0), ai->cb->GetUnitPos(*it)+float3(0, 100, 0), 5, 1, 900, 0);
+					ailog->info() << "  enemy at " << ai->cheatcb->GetUnitPos(*it) << std::endl;
+					ai->cb->CreateLineFigure(pos+float3(0, 100, 0), ai->cheatcb->GetUnitPos(*it)+float3(0, 100, 0), 5, 20, 900, 0);
 				}
-				ai->cb->SendTextMsg("build aborted", 0);
 			}
 		}
 	}

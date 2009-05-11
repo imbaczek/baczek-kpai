@@ -126,7 +126,7 @@ public:
 	{
 		int enemies[MAX_UNITS];
 		int numenemies;
-		numenemies = cheatcb->GetEnemyUnits(enemies, pos, 1536);
+		numenemies = cheatcb->GetEnemyUnits(enemies, pos, radius);
 		output.clear();
 		output.reserve(numenemies);
 		for (int i=0; i<numenemies; ++i)
