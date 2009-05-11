@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/timer.hpp>
 
 #include "json_spirit/json_spirit.h"
 
@@ -87,21 +88,32 @@ struct Visitor {
 	}
 };
 
+
 void InfluenceMap::FindLocalMinima(float radius, std::vector<int> &values, std::vector<float3> &positions)
 {
+	boost::timer total;
+
 	// cache results
 	int frameNum = ai->cb->GetCurrentFrame();
 	if (lastMinimaFrame == frameNum) {
 		values = minimaCachedValues;
 		positions = minimaCachedPositions;
+		ailog->info() << __FUNCTION__ << " cached " << total.elapsed() << std::endl;
 		return;
 	} else {
 		lastMinimaFrame = frameNum;
 	}
 
+	if (radius < 0)
+		return;
+
 	float r = radius*radius*scalex*scaley;
 	values.clear();
 	positions.clear();
+
+	if (radius < 0)
+		return;
+
 	RTree rtree;
 
 	// find points such that
@@ -138,8 +150,6 @@ not_found:  ;
 
 	// remove points which are too close to each other
 	// according to the provided radius
-	if (radius <= 0)
-		return;
 	std::set<int> toDel;
 
 	for (int i = 0; i<positions.size(); ++i) {
@@ -153,6 +163,8 @@ not_found:  ;
 		values.erase(values.begin() + *it);
 		positions.erase(positions.begin() + *it);
 	}
+
+	ailog->info() << __FUNCTION__ << " " << total.elapsed() << std::endl;
 }
 
 
@@ -162,6 +174,8 @@ not_found:  ;
 void InfluenceMap::Update(const std::vector<int>& friends,
 						  const std::vector<int>& enemies)
 {
+	boost::timer total;
+
 	for (int x=0; x<mapw; ++x) {
 		for (int y=0; y<maph; ++y) {
 			map[x][y] = 0;
@@ -177,13 +191,20 @@ void InfluenceMap::Update(const std::vector<int>& friends,
 		// add enemies to influence map
 		UpdateSingleUnit(uid, -1);
 	}
+
+	ailog->info() << __FUNCTION__ << " " << total.elapsed() << std::endl;
 }
 
 void InfluenceMap::UpdateSingleUnit(int uid, int sign)
 {
 	// find customized data from JSON file
 	const UnitDef *ud = ai->cheatcb->GetUnitDef(uid);
-	assert(ud);
+	
+	if (!ud) {
+		// unit probably doesn't exist anymore
+		return;
+	}
+
 	unit_value_map_t::iterator it = unit_map.find(ud->name);
 
 	if (it == unit_map.end()) {
@@ -193,7 +214,7 @@ void InfluenceMap::UpdateSingleUnit(int uid, int sign)
 		float3 pos = ai->cheatcb->GetUnitPos(uid);
 		int x = (int)(pos.x * scalex);
 		int y = (int)(pos.z * scaley);
-		map[x][y] += 1;
+		map[x][y] += sign;
 	} else {
 		// unit found, add a value to influence map in given
 		// UnitData.radius, with min_value at the max distance
