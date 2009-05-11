@@ -1,7 +1,8 @@
 #include <algorithm>
 #include <strstream>
-#include <boost/foreach.hpp>
 #include <cmath>
+#include <boost/foreach.hpp>
+#include <boost/timer.hpp>
 
 #include "ExternalAI/IGlobalAICallback.h"
 #include "ExternalAI/IAICheats.h"
@@ -40,6 +41,8 @@ TopLevelAI::~TopLevelAI(void)
 
 void TopLevelAI::Update()
 {
+	boost::timer total;
+
 	int frameNum = ai->cb->GetCurrentFrame();
 
 	// check if builder's rally point is ok
@@ -64,6 +67,8 @@ void TopLevelAI::Update()
 	BOOST_FOREACH(UnitGroupAI& it, groups) {
 		it.Update();
 	}
+
+	ailog->info() << __FUNCTION__ << " " << total.elapsed() << std::endl;
 }
 
 

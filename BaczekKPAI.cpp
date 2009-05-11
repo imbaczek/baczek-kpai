@@ -9,6 +9,7 @@
 #include <iterator>
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/timer.hpp>
 
 // AI interface/Spring includes
 #include "AIExport.h"
@@ -233,6 +234,8 @@ int BaczekKPAI::HandleEvent(int msg,const void* data)
 
 void BaczekKPAI::Update()
 {
+	boost::timer total;
+
 	int frame=cb->GetCurrentFrame();
 	int unitids[MAX_UNITS];
 	int num = cb->GetFriendlyUnits(unitids);
@@ -255,6 +258,8 @@ void BaczekKPAI::Update()
 	python->GameFrame(frame);
 
 	toplevel->Update();
+
+	ailog->info() << "frame " << frame << " in " << total.elapsed() << std::endl;
 }
 
 ///////////////////
