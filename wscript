@@ -11,13 +11,26 @@ blddir = 'output'
 def set_options(opt):
     opt.add_option('--spring-dir', default='../../../',
             help='Spring RTS checkout directory')
-    opt.add_option('--boost-dir',
-            help='directory from which include boost/*.h works')
+
+    opt.tool_options('boost')
+    opt.tool_options('python')
 
 
 def configure(conf):
     # tool checks
+    conf.check_tool('gcc')
     conf.check_tool('gxx')
+    conf.check_tool('python')
+    if not conf.env['PYTHON_VERSION']:
+        conf.env['PYTHON_VERSION'] = '2.6'
+    conf.check_python_headers()
+    conf.check_tool('boost')
+    conf.check_boost(lib='signals filesystem python system thread',
+           kind='STATIC_BOTH', 
+           score_version=(-1000, 1000),
+           tag_minscore=1000,
+           mandatory=True)
+    
     #conf.find_gxx()
     # global compiler flags
     conf.env.append_value('CCFLAGS',  '-Wall')
@@ -29,7 +42,6 @@ def configure(conf):
     # global conf options
     from Options import options
     conf.env['spring_dir'] = os.path.abspath(options.spring_dir)
-    conf.env['boost_dir'] = os.path.abspath(options.boost_dir)
 
     # more compiler flags
     env2 = conf.env.copy()
@@ -65,9 +77,10 @@ def build(bld):
                 always=True,
                 on_results=True,
         )
+
     skirmishai = bld.new_task_gen(
-            features='cxx cshlib',
-            includes=['.']+ [os.path.join(bld.env['spring_dir'], x)
+            features='cxx cc cshlib',
+            includes=['.'] + [os.path.join(bld.env['spring_dir'], x)
                 for x in ('rts', 'rts/System', 'AI/Wrappers',
                     'AI/Wrappers/CUtils', 'AI/Wrappers/LegacyCPP',
                     'rts/Sim/Misc', 'rts/Game')] \
