@@ -737,7 +737,8 @@ void TopLevelAI::FindPointerTargets()
 					assert(unitdef);
 					std::string name = unitdef->name;
 					if (name == "kernel" ||  name == "hole" || name == "gateway"
-							|| name == "socket" || name == "window" || name == "port") {
+							|| name == "socket" || name == "window" || name == "port"
+							|| name == "terminal" || name == "obelisk" || name == "firewall") {
 						foundid = enemies[i];
 						break;
 					}
