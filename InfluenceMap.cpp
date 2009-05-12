@@ -29,11 +29,19 @@ configName(cfg)
 	scalex = scaley = 1./SQUARE_SIZE/influence_size_divisor;
 
 	map.resize(mapw);
+	workMap.resize(mapw);
 	BOOST_FOREACH(std::vector<int>& r, map) {
 		r.resize(maph);
 	}
-
+	BOOST_FOREACH(std::vector<int>& r, workMap) {
+		r.resize(maph);
+	}
 	lastMinimaFrame = -1;
+
+	alliedProgress = 0;
+	enemyProgress = 0;
+	updateInProgress = false;
+	enemiesDone = false;
 }
 
 InfluenceMap::~InfluenceMap()
@@ -171,7 +179,7 @@ not_found:  ;
 /////////////////////////////////////////
 // influence map updating
 
-void InfluenceMap::Update(const std::vector<int>& friends,
+void InfluenceMap::UpdateAll(const std::vector<int>& friends,
 						  const std::vector<int>& enemies)
 {
 	boost::timer total;
@@ -184,18 +192,76 @@ void InfluenceMap::Update(const std::vector<int>& friends,
 
 	BOOST_FOREACH(int uid, friends) {
 		// add friends to influence map
-		UpdateSingleUnit(uid, 1);
+		UpdateSingleUnit(uid, 1, map);
 	}
 
 	BOOST_FOREACH(int uid, enemies) {
 		// add enemies to influence map
-		UpdateSingleUnit(uid, -1);
+		UpdateSingleUnit(uid, -1, map);
 	}
 
 	ailog->info() << __FUNCTION__ << " " << total.elapsed() << std::endl;
 }
 
-void InfluenceMap::UpdateSingleUnit(int uid, int sign)
+// partial updates
+
+void InfluenceMap::Update(const std::vector<int>& arg_friends,
+						  const std::vector<int>& arg_enemies)
+{
+	if (updateInProgress) {
+		if (enemiesDone) {
+			if (UpdatePartial(true, friends))
+				FinishPartialUpdate();
+		} else {
+			enemiesDone = UpdatePartial(false, enemies);
+		}
+	} else {
+		StartPartialUpdate(arg_friends, arg_enemies);
+	}
+}
+
+void InfluenceMap::StartPartialUpdate(const std::vector<int>& friends,
+						  const std::vector<int>& enemies)
+{
+	ailog->info() << "influence: starting partial update..." << std::endl;
+	alliedProgress = 0;
+	enemyProgress = 0;
+	updateInProgress = true;
+	enemiesDone = false;
+	for (int y = 0; y<maph; ++y)
+		for (int x = 0; x<mapw; ++x)
+			workMap[x][y] = 0;
+	this->friends = friends;
+	this->enemies = enemies;
+}
+
+void InfluenceMap::FinishPartialUpdate()
+{
+	// copy workMap onto map
+	map = workMap;
+	updateInProgress = false;
+	ailog->info() << "influence: finished partial update." << std::endl;
+}
+
+bool InfluenceMap::UpdatePartial(bool allied, const std::vector<int> &uids)
+{
+	assert(updateInProgress);
+
+	int& progress = (allied ? alliedProgress : enemyProgress);
+	int sign = (allied ? 1 : -1);
+	int nextStop = std::min(progress + 50, (int)uids.size()); // XXX make configureable?
+
+	ailog->info() << "influence: partial update of " << (allied ? "friends" : "enemies")
+		<< " from " << progress << " to " << nextStop << std::endl;
+
+	for (; progress < nextStop; ++progress) {
+		UpdateSingleUnit(uids[progress], sign, workMap);
+	}
+	return progress >= uids.size();
+}
+
+
+void InfluenceMap::UpdateSingleUnit(int uid, int sign, map_t& themap)
 {
 	// find customized data from JSON file
 	const UnitDef *ud = ai->cheatcb->GetUnitDef(uid);
@@ -214,7 +280,7 @@ void InfluenceMap::UpdateSingleUnit(int uid, int sign)
 		float3 pos = ai->cheatcb->GetUnitPos(uid);
 		int x = (int)(pos.x * scalex);
 		int y = (int)(pos.z * scaley);
-		map[x][y] += sign;
+		themap[x][y] += sign;
 	} else {
 		// unit found, add a value to influence map in given
 		// UnitData.radius, with min_value at the max distance
@@ -235,7 +301,7 @@ void InfluenceMap::UpdateSingleUnit(int uid, int sign)
 				if (distsq > rsq)
 					continue;
 				float k = (float)distsq/rsq;
-				map[px][py] += (int)((1-k)*data.max_value + k*data.min_value)*sign;
+				themap[px][py] += (int)((1-k)*data.max_value + k*data.min_value)*sign;
 			}
 		}
 	}

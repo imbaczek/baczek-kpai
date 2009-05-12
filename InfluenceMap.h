@@ -17,6 +17,13 @@ protected:
 	std::vector<int> minimaCachedValues;
 	std::vector<float3> minimaCachedPositions;
 
+	// partial updates
+	int alliedProgress, enemyProgress;
+	bool updateInProgress;
+	bool enemiesDone;
+	std::vector<int> friends, enemies;
+
+
 public:
 	InfluenceMap(BaczekKPAI* ai, std::string);
 	~InfluenceMap();
@@ -38,7 +45,10 @@ public:
 	int mapw, maph;
 	float scalex, scaley;
 
-	std::vector<std::vector<int> > map;
+	typedef std::vector<std::vector<int> > map_t;
+
+	map_t map;
+	map_t workMap;
 
 
 	/* reads a config file in a format like
@@ -57,9 +67,18 @@ public:
 	int GetAtXY(int x, int y);
 
 
-	void Update(const std::vector<int>& friends,
+	void UpdateAll(const std::vector<int>& friends,
 				const std::vector<int>& enemies);
-	void UpdateSingleUnit(int uid, int sign);
+
+	void Update(const std::vector<int>& friends,
+						  const std::vector<int>& enemies);
+	void StartPartialUpdate(const std::vector<int>& friends,
+						  const std::vector<int>& enemies);
+	void FinishPartialUpdate();
+	bool IsUpdateInProgress() { return updateInProgress; }
+	bool UpdatePartial(bool allied, const std::vector<int>& uids);
+
+	void UpdateSingleUnit(int uid, int sign, map_t& themap);
 
 	void FindLocalMinima(float radius, std::vector<int>& values, std::vector<float3>& positions);
 };
