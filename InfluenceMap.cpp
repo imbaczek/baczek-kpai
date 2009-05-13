@@ -119,9 +119,6 @@ void InfluenceMap::FindLocalMinima(float radius, std::vector<int> &values, std::
 	values.clear();
 	positions.clear();
 
-	if (radius < 0)
-		return;
-
 	RTree rtree;
 
 	// find points such that
@@ -171,6 +168,9 @@ not_found:  ;
 		values.erase(values.begin() + *it);
 		positions.erase(positions.begin() + *it);
 	}
+	
+	minimaCachedValues = values;
+	minimaCachedPositions = positions;
 
 	ailog->info() << __FUNCTION__ << " " << total.elapsed() << std::endl;
 }
