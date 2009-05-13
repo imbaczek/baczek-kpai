@@ -134,9 +134,40 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 			c.AddParam(param->y);
 			c.AddParam(param->z);
 			ai->cb->GiveOrder(owner->id, &c);
+			goal->OnComplete(on_complete_clean_current_goal(this));
+			goal->OnAbort(on_complete_clean_current_goal(this));
 			goal->start();
 			currentGoalId = goal->id;
 			
+			return PROCESS_BREAK;
+		}
+
+		case ATTACK: {
+			if (goal->params.empty()) {
+				ailog->error() << "no params on ATTACK goal" << std::endl;
+				return PROCESS_POP_CONTINUE;
+			}
+			float3* paramf = boost::get<float3>(&goal->params[0]);
+			int* parami = boost::get<int>(&goal->params[0]);
+			if (!paramf || !parami) {
+				ailog->error() << "invalid param on ATTACK goal" << std::endl;
+				return PROCESS_POP_CONTINUE;
+			}
+			Command c;
+			c.id = CMD_FIGHT;
+			if (paramf) { // attack move
+				c.AddParam(paramf->x);
+				c.AddParam(paramf->y);
+				c.AddParam(paramf->z);
+			} else { // attack unit
+				c.AddParam(*parami);
+			}
+			ai->cb->GiveOrder(owner->id, &c);
+			currentGoalId = goal->id;
+			goal->OnComplete(on_complete_clean_current_goal(this));
+			goal->OnAbort(on_complete_clean_current_goal(this));
+			goal->start();
+
 			return PROCESS_BREAK;
 		}
 

@@ -48,4 +48,5 @@ public:
 	static bool IsConstructor(const UnitDef* ud) { return ud->name == "assembler" || ud->name == "gateway" || ud->name == "trojan"; }
 	static bool IsBase(const UnitDef* ud) { return ud->name == "kernel" || ud->name == "hole" || ud->name == "carrier"; }
 	static bool IsExpansion(const UnitDef* ud) { return ud->name == "window" || ud->name == "socket" || ud->name == "port"; }
+	static bool IsSuperWeapon(const UnitDef* ud) { return ud->name == "terminal" || ud->name == "firewall" || ud->name == "obelisk"; }
 };

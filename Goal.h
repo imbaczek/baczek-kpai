@@ -15,7 +15,7 @@
 #include "Log.h"
 
 enum Type {
-	ATTACK_UNIT,
+	ATTACK,
 	ATTACK_AREA,
 	DEFEND_AREA,
 	BUILD_CONSTRUCTOR,

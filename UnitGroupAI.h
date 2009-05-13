@@ -77,8 +77,9 @@ public:
 	void Update();
 
 	void ProcessBuildExpansion(Goal* g);
-	void ProcessMove(Goal* g);
 	void ProcessBuildConstructor(Goal* g);
+	void ProcessRetreatMove(Goal* g);
+	void ProcessAttack(Goal* g);
 
 	void AssignUnit(Unit* unit);
 	void RemoveUnit(Unit* unit);
@@ -99,4 +100,6 @@ public:
 	void TurnTowards(float3 point);
 	void MoveTurnTowards(float3 dest, float3 point);
 	void SetupFormation(float3 point);
+	void AttackMoveToSpot(float3 dest);
+	void MoveToSpot(float3 dest);
 };

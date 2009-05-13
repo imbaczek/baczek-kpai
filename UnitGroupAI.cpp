@@ -36,7 +36,13 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 		case RETREAT:
 			if (goal->params.empty())
 				return PROCESS_POP_CONTINUE;
-			ProcessMove(goal);
+			ProcessRetreatMove(goal);
+			return PROCESS_BREAK;
+
+		case ATTACK:
+			if (goal->params.empty())
+				return PROCESS_POP_CONTINUE;
+			ProcessAttack(goal);
 			return PROCESS_BREAK;
 
 		default:
@@ -151,7 +157,7 @@ void UnitGroupAI::ProcessBuildExpansion(Goal* goal)
 
 
 
-void UnitGroupAI::ProcessMove(Goal* goal)
+void UnitGroupAI::ProcessRetreatMove(Goal* goal)
 {
 	assert(goal);
 	assert(goal->type == MOVE || goal->type == RETREAT);
@@ -189,6 +195,48 @@ void UnitGroupAI::ProcessMove(Goal* goal)
 		uai->AddGoal(g);
 	}
 }
+
+
+void UnitGroupAI::ProcessAttack(Goal* goal)
+{
+	assert(goal);
+	assert(goal->type == ATTACK);
+
+	// may throw
+	rallyPoint = boost::get<float3>(goal->params[0]);
+
+	int i = 0;
+
+	BOOST_FOREACH(UnitAISet::value_type& v, units) {
+		UnitAIPtr uai = v.second;
+		Unit* unit = uai->owner;
+		assert(unit);
+		if (usedUnits.find(unit->id) != usedUnits.end())
+			continue;
+		if (uai->HaveGoalType(ATTACK, goal->priority))
+			continue;
+		usedUnits.insert(unit->id);
+
+		ailog->info() << "gave " << unit->id << " ATTACK to " << rallyPoint << std::endl;
+		Goal* g = Goal::GetGoal(Goal::CreateGoal(goal->priority, ATTACK));
+		g->parent = goal->id;
+		g->timeoutFrame = goal->timeoutFrame;
+		// behaviour when subgoal changes
+		// remove marks
+		g->OnComplete(RemoveUsedUnit(*this, unit->id));
+		// order matters!
+		g->OnAbort(RemoveUsedUnit(*this, unit->id));
+		g->OnComplete(IfUsedUnitsEmpty(*this, CompleteGoal(*goal)));
+		g->OnStart(StartGoal(*goal));
+
+		// behaviour when parent goal changes
+		goal->OnAbort(AbortGoal(*g)); // abort subgoal
+		goal->OnComplete(CompleteGoal(*g)); // complete subgoal
+
+		uai->AddGoal(g);
+	}
+}
+
 
 
 ////////////////////////////////////////////////////////////////////
@@ -331,6 +379,9 @@ float UnitGroupAI::SqDistanceClosestUnit(const float3& pos, int* unit, const Uni
 float3 UnitGroupAI::GetGroupMidPos()
 {
 	float3 pos(0, 0, 0);
+	if (units.empty)
+		return pos;
+
 	for (UnitAISet::iterator it = units.begin(); it != units.end(); ++it) {
 		pos += ai->cb->GetUnitPos(it->first);
 	}
@@ -421,3 +472,23 @@ void UnitGroupAI::SetupFormation(float3 point)
 	}
 }
 
+
+void UnitGroupAI::AttackMoveToSpot(float3 dest)
+{
+	Goal* g = Goal::GetGoal(Goal::CreateGoal(10, ATTACK));
+	assert(g);
+
+	g->params.push_back(dest);
+	g->timeoutFrame = ai->cb->GetCurrentFrame() + 30*GAME_SPEED;
+	AddGoal(g);
+}
+
+void UnitGroupAI::MoveToSpot(float3 dest)
+{
+	Goal* g = Goal::GetGoal(Goal::CreateGoal(10, MOVE));
+	assert(g);
+
+	g->params.push_back(dest);
+	g->timeoutFrame = ai->cb->GetCurrentFrame() + 30*GAME_SPEED;
+	AddGoal(g);
+}

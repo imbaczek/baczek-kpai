@@ -184,9 +184,7 @@ void TopLevelAI::FindGoalsExpansion(std::vector<float3>& badSpots)
 			bool alive = ai->cheatcb->GetUnitHealth(id) > 0;
 			assert(ud);
 			// TODO make configurable
-			if (alive && (ud->name == "socket" || ud->name == "port" || ud->name == "window"
-					|| ud->name == "terminal" || ud->name == "firewall" || ud->name == "obelisk"
-					|| ud->name == "kernel" || ud->name == "carrier" || ud->name == "hole")) {
+			if (alive && (Unit::IsBase(ud) || Unit::IsExpansion(ud) || Unit::IsSuperWeapon(ud))) {
 				badspot = true;
 				ailog->info() << "found blocking " << ud->name << " at  " << ai->cheatcb->GetUnitPos(id) << std::endl;
 				break;
@@ -610,12 +608,36 @@ void TopLevelAI::FindGoalsAttack()
 	}
 
 	if (!groups.empty()) {
-		if (minminidx != maxminidx) {
-			groups[currentBattleGroup].MoveTurnTowards(positions[minminidx], positions[maxminidx]);
-			ai->cb->CreateLineFigure(positions[minminidx]+float3(0, 100, 0), positions[maxminidx], 5, 5, 600, 0);
-		} else if (minminidx != -1) {
-			groups[currentBattleGroup].MoveTurnTowards(positions[minminidx], float3(ai->map.w*0.5f, 0, ai->map.h*0.5f));
-			ai->cb->CreateLineFigure(positions[minminidx]+float3(0, 100, 0), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f), 5, 5, 600, 0);
+		if (minminidx != -1) {
+			// check if there's a minifac or expansion near the spot
+			// if there is, attack there
+			std::vector<int> enemies;
+			ai->GetEnemiesInRadius(positions[minminidx], 1024, enemies);
+			if (!enemies.empty()) {
+				for (std::vector<int>::iterator it = enemies.begin(); it != enemies.end(); ++it) {
+					const UnitDef* unitdef = ai->cheatcb->GetUnitDef(*it);
+					if (Unit::IsBase(unitdef) || Unit::IsExpansion(unitdef) || Unit::IsSuperWeapon(unitdef)) {
+						// found a suitable target
+						Goal* g = Goal::GetGoal(Goal::CreateGoal(10, ATTACK));
+						g->timeoutFrame = 120*GAME_SPEED;
+						g->params.push_back(*it);
+						groups[currentBattleGroup].AddGoal(g);
+						ai->cb->CreateLineFigure(ai->cheatcb->GetUnitPos(*it)+float3(0, 100, 0),
+							positions[minminidx]+float3(0, 100, 0), 5, 5, 600, 0);
+						ailog->info() << "proceeding to attack " << unitdef->name << " at " << ai->cheatcb->GetUnitPos(*it) << std::endl;
+						break;
+					}
+				}
+			}
+			// good target not found, setup formation
+			else if (minminidx != maxminidx) {
+				groups[currentBattleGroup].MoveTurnTowards(positions[minminidx], positions[maxminidx]);
+				ai->cb->CreateLineFigure(positions[minminidx]+float3(0, 100, 0), positions[maxminidx], 5, 5, 600, 0);
+			}
+			else {
+				groups[currentBattleGroup].MoveTurnTowards(positions[minminidx], float3(ai->map.w*0.5f, 0, ai->map.h*0.5f));
+				ai->cb->CreateLineFigure(positions[minminidx]+float3(0, 100, 0), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f), 5, 5, 600, 0);
+			}
 		} else {
 			groups[currentBattleGroup].MoveTurnTowards(ai->cb->GetUnitPos(bases->units.begin()->first), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f));
 			ai->cb->CreateLineFigure(ai->cb->GetUnitPos(bases->units.begin()->first)+float3(0, 100, 0), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f), 5, 5, 600, 0);
@@ -735,10 +757,7 @@ void TopLevelAI::FindPointerTargets()
 				for (int i = 0; i<numenemies; ++i) {
 					const UnitDef* unitdef = ai->cheatcb->GetUnitDef(enemies[i]);
 					assert(unitdef);
-					std::string name = unitdef->name;
-					if (name == "kernel" ||  name == "hole" || name == "gateway"
-							|| name == "socket" || name == "window" || name == "port"
-							|| name == "terminal" || name == "obelisk" || name == "firewall") {
+					if (Unit::IsBase(unitdef) || Unit::IsExpansion(unitdef) || Unit::IsSuperWeapon(unitdef)) {
 						foundid = enemies[i];
 						break;
 					}
