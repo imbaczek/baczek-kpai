@@ -202,9 +202,6 @@ void UnitGroupAI::ProcessAttack(Goal* goal)
 	assert(goal);
 	assert(goal->type == ATTACK);
 
-	// may throw
-	rallyPoint = boost::get<float3>(goal->params[0]);
-
 	int i = 0;
 
 	BOOST_FOREACH(UnitAISet::value_type& v, units) {
@@ -217,10 +214,12 @@ void UnitGroupAI::ProcessAttack(Goal* goal)
 			continue;
 		usedUnits.insert(unit->id);
 
-		ailog->info() << "gave " << unit->id << " ATTACK to " << rallyPoint << std::endl;
+		assert(goal->params.size() >= 1);
+
 		Goal* g = Goal::GetGoal(Goal::CreateGoal(goal->priority, ATTACK));
 		g->parent = goal->id;
 		g->timeoutFrame = goal->timeoutFrame;
+		g->params.push_back(goal->params[0]);
 		// behaviour when subgoal changes
 		// remove marks
 		g->OnComplete(RemoveUsedUnit(*this, unit->id));
@@ -375,11 +374,48 @@ float UnitGroupAI::SqDistanceClosestUnit(const float3& pos, int* unit, const Uni
 	return min;
 }
 
+/// if unitdef is NULL, "assembler" is used
+float UnitGroupAI::DistanceClosestUnit(const float3& pos, int* unit, const UnitDef* unitdef)
+{
+	float min = 1e30;
+	int found_uid = -1;
+
+	if (!unitdef) {
+		unitdef = ai->cb->GetUnitDef("assembler");
+		if (!unitdef) {
+			ailog->error() << "default unitdef \"assembler\" not found in SqDistanceClosestUnit" << std::endl;
+			return -1;
+		}
+	}
+
+	BOOST_FOREACH(const UnitAISet::value_type& v, units) {
+		int id = v.first;
+		const UnitDef* ud = ai->cb->GetUnitDef(id);
+		const float size = std::max(ud->xsize, ud->zsize)*SQUARE_SIZE;
+		float3 upos = ai->cb->GetUnitPos(id);
+		float3 startpos = random_offset_pos(upos, size*1.5, size*2);
+		float tmp = ai->cb->GetPathLength(startpos, pos, unitdef->movedata->pathType);
+		if (tmp < min && tmp >=0) {
+			min = tmp;
+			found_uid = id;
+		} else if (tmp < 0) {
+			ailog->error() << "can't reach " << pos << " from " << startpos << std::endl;
+		}
+	}
+	
+	if (unit)
+		*unit = found_uid;
+	if (found_uid == -1)
+		min = -1;
+	return min;
+}
+
+
 
 float3 UnitGroupAI::GetGroupMidPos()
 {
 	float3 pos(0, 0, 0);
-	if (units.empty)
+	if (units.empty())
 		return pos;
 
 	for (UnitAISet::iterator it = units.begin(); it != units.end(); ++it) {

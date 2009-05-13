@@ -89,6 +89,7 @@ public:
 	// unit - returns unit id
 	// unitdef - unitdef for pathfinder purposes
 	float SqDistanceClosestUnit(const float3& pos, int* unit, const UnitDef* unitdef);
+	float DistanceClosestUnit(const float3& pos, int* unit, const UnitDef* unitdef);
 
 	float3 GetGroupMidPos();
 	int GetGroupHealth();
