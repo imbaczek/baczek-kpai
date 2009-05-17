@@ -182,11 +182,11 @@ void UnitAI::Update()
 {
 	int frameNum = ai->cb->GetCurrentFrame();
 
-	int phase = frameNum % 30;
+	int phase = frameNum % GAME_SPEED;
 
-	if (phase == 0) {
+	if (phase == (owner ? owner->id%GAME_SPEED : 0)) {
 		std::sort(goals.begin(), goals.end(), goal_priority_less());
-		DumpGoalStack("Unit");
+		//DumpGoalStack("Unit");
 		CheckContinueGoal();
 		ProcessGoalStack(frameNum);
 	} else if (phase == 1) {

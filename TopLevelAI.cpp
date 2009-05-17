@@ -50,7 +50,7 @@ void TopLevelAI::Update()
 		builders->rallyPoint = random_offset_pos(ai->cb->GetUnitPos(bases->units.begin()->first), SQUARE_SIZE*10, SQUARE_SIZE*40);
 	}
 
-	if (frameNum % 300 == 1) {
+	if (frameNum % (GAME_SPEED * 10)  == 3) {
 		FindGoals();
 	}
 	if (frameNum % 30 == 0) {
@@ -59,11 +59,14 @@ void TopLevelAI::Update()
 
 	// update unit groups
 	builders->Update();
-	if (frameNum %30 == 1) {
+	if (frameNum % 30 == 1) {
 		builders->RetreatUnusedUnits();
+	} else if (frameNum % GAME_SPEED == 2) {
 		FindPointerTargets();
 	}
+
 	bases->Update();
+	expansions->Update();
 	BOOST_FOREACH(UnitGroupAI& it, groups) {
 		it.Update();
 	}
@@ -157,6 +160,8 @@ void TopLevelAI::ProcessBuildConstructor(Goal* g)
 /// high-level routine
 void TopLevelAI::FindGoals()
 {
+	boost::timer t;
+
 	std::vector<float3> badSpots;
 	FindGoalsExpansion(badSpots); // badSpots gets modified here
 	FindGoalsRetreatBuilders(badSpots); // and used here
@@ -165,12 +170,16 @@ void TopLevelAI::FindGoals()
 	FindBaseBuildGoals();
 
 	FindBattleGroupGoals();
+
+	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
 
 /// find suitable expansion spots
 /// also find spots that can't be expanded on, return them in badSpots
 void TopLevelAI::FindGoalsExpansion(std::vector<float3>& badSpots)
 {
+	boost::timer t;
+
 	// find free geo spots to build expansions on
 	ailog->info() << "FindGoal() expansions" << std::endl;
 	BOOST_FOREACH(float3 geo, ai->geovents) {
@@ -261,12 +270,15 @@ void TopLevelAI::FindGoalsExpansion(std::vector<float3>& badSpots)
 			AddGoal(g);
 		}
 	}
+
+	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
 
 /// remove BUILD_EXPANSION goals that are placed on spots which are now bad
 /// also, when there are no spots left to build on, retreat whole builder group
 void TopLevelAI::FindGoalsRetreatBuilders(std::vector<float3>& badSpots)
 {
+	boost::timer t;
 	// filter out goals on bad spots
 	// also check if there are BUILD_EXPANSION goals at all
 	// if there are none, issue a RETREAT goal
@@ -335,11 +347,13 @@ void TopLevelAI::FindGoalsRetreatBuilders(std::vector<float3>& badSpots)
 			builderRetreatGoalId = -1;
 		}
 	}
+	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
 
 /// decides whether to build constructors
 void TopLevelAI::FindGoalsBuildConstructors()
 {
+	boost::timer t;
 	/////////////////////////////////////////////////////
 	// count own constructors and BUILD_CONSTRUCTOR goals
 	ailog->info() << "FindGoal() constructors" << std::endl;
@@ -378,6 +392,7 @@ void TopLevelAI::FindGoalsBuildConstructors()
 	}
 
 	std::sort(goals.begin(), goals.end(), goal_priority_less());
+	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -387,6 +402,8 @@ void TopLevelAI::FindGoalsBuildConstructors()
 
 void TopLevelAI::FindBattleGroupGoals()
 {
+	boost::timer t;
+
 	ailog->info() << "assign group size: " << groups[currentAssignGroup].units.size()
 		<< " battle group size: " << groups[currentBattleGroup].units.size() << std::endl;
 
@@ -439,11 +456,14 @@ void TopLevelAI::FindBattleGroupGoals()
 
 	FindGoalsGather();
 	FindGoalsAttack();
+	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
 
 
 void TopLevelAI::FindGoalsGather()
 {
+	boost::timer t;
+
 	// initial gather spot: current spot
 	if (groups[currentAssignGroup].units.empty())
 		return;
@@ -475,6 +495,7 @@ void TopLevelAI::FindGoalsGather()
 		}
 	}
 
+	/* FIXME ultraslow!
 	// no enemies near base, find some near expansion
 	if (found == -1) {
 		ai->influence->FindLocalMinima(256, values, positions);
@@ -496,6 +517,7 @@ void TopLevelAI::FindGoalsGather()
 		if (found >= 0)
 			foundSpot = positions[found];
 	}
+	*/
 
 	// if no enemies found, stay at base
 	if (found != -1) {
@@ -505,6 +527,7 @@ void TopLevelAI::FindGoalsGather()
 	else
 		groups[currentAssignGroup].rallyPoint = gatherSpot;
 
+	/* FIXME very slow
 	// battle group
 	// if there are no expansions, gather at base
 	if (expansions->units.empty()) {
@@ -541,6 +564,7 @@ void TopLevelAI::FindGoalsGather()
 			groups[currentBattleGroup].rallyPoint = random_offset_pos(ai->cb->GetUnitPos(uid), 256, 768);
 		}
 	}
+	*/
 
 	// issue retreat goals every 30s or so
 	int frameNum = ai->cb->GetCurrentFrame();
@@ -556,6 +580,7 @@ void TopLevelAI::FindGoalsGather()
 			ai->cb->SendTextMsg("retreating battle group", 0);
 		}
 	}
+	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
 
 
@@ -587,6 +612,8 @@ void TopLevelAI::SetAttackState(TopLevelAI::AttackState state)
 
 void TopLevelAI::FindGoalsAttack()
 {
+	boost::timer t;
+
 	if (attackState != AST_ATTACK)
 		return;
 
@@ -651,6 +678,7 @@ void TopLevelAI::FindGoalsAttack()
 			ai->cb->CreateLineFigure(ai->cb->GetUnitPos(bases->units.begin()->first)+float3(0, 100, 0), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f), 5, 5, 600, 0);
 		}
 	}
+	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -706,6 +734,8 @@ struct RemoveSuspendedPointerGoal : std::unary_function<Goal&, void>
 
 void TopLevelAI::FindPointerTargets()
 {
+	boost::timer t;
+
 	int enemies[MAX_UNITS];
 	int numenemies;
 
@@ -717,6 +747,10 @@ void TopLevelAI::FindPointerTargets()
 				continue;
 
 			float3 pos = ai->cb->GetUnitPos(it->first);
+			// first, check if it's safe to stop
+			if (ai->influence->GetAtXY(pos.x, pos.z) < 0)
+				continue;
+
 			// TODO eliminate constant - 1400 is pointer range
 			numenemies = ai->cb->GetEnemyUnits(enemies, pos, 1400);
 			int smallTargets = 0;
@@ -819,6 +853,7 @@ void TopLevelAI::FindPointerTargets()
 			}
 		}
 	}
+	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
 
 

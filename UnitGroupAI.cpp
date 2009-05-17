@@ -1,5 +1,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/foreach.hpp>
+#include <boost/timer.hpp>
 
 #include "Sim/MoveTypes/MoveInfo.h"
 
@@ -54,6 +55,7 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 
 void UnitGroupAI::Update()
 {
+	boost::timer t;
 	int frameNum = ai->cb->GetCurrentFrame();
 
 	if (frameNum % 30 == 0) {
@@ -67,6 +69,7 @@ void UnitGroupAI::Update()
 	BOOST_FOREACH(UnitAISet::value_type& v, units) {
 		v.second->Update();
 	}
+	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
 
 
@@ -276,6 +279,8 @@ void UnitGroupAI::RemoveUnitAI(UnitAI& unitAi)
 
 void UnitGroupAI::RetreatUnusedUnits()
 {
+	boost::timer t;
+
 	if (!rallyPoint.IsInBounds()) {
 		ailog->info() << "cannot retreat unit group, rally point not set" << std::endl;
 		return;
@@ -297,6 +302,8 @@ void UnitGroupAI::RetreatUnusedUnits()
 			it->second->AddGoal(newgoal);
 		}
 	}
+
+	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
 
 
