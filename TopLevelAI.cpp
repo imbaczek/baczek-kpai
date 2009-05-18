@@ -543,6 +543,8 @@ void TopLevelAI::FindGoalsGather()
 		}
 	}
 
+assign_group_found:;
+
 	// if no enemies found, stay at base
 	if (found != -1) {
 		groups[currentAssignGroup].rallyPoint = foundSpot;
@@ -551,7 +553,7 @@ void TopLevelAI::FindGoalsGather()
 	else
 		groups[currentAssignGroup].rallyPoint = gatherSpot;
 
-assign_group_found:;
+
 
 	int influence = INT_MAX;
 	for (std::vector<float3>::iterator it = ai->geovents.begin(); it != ai->geovents.end(); ++it) {
