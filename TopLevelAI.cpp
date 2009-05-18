@@ -658,7 +658,7 @@ void TopLevelAI::FindGoalsAttack()
 					const UnitDef* unitdef = ai->cheatcb->GetUnitDef(*it);
 					if (Unit::IsBase(unitdef) || Unit::IsExpansion(unitdef) || Unit::IsSuperWeapon(unitdef)) {
 						// found a suitable target
-						Goal* g = Goal::GetGoal(Goal::CreateGoal(10, ATTACK));
+						Goal* g = Goal::GetGoal(Goal::CreateGoal(11, ATTACK));
 						g->timeoutFrame = 120*GAME_SPEED;
 						g->params.push_back(*it);
 						groups[currentBattleGroup].AddGoal(g);
@@ -671,11 +671,11 @@ void TopLevelAI::FindGoalsAttack()
 			}
 			// good target not found, setup formation
 			else if (minminidx != maxminidx) {
-				groups[currentBattleGroup].MoveTurnTowards(positions[minminidx], positions[maxminidx]);
+				groups[currentBattleGroup].AttackMoveToSpot(positions[maxminidx]);
 				ai->cb->CreateLineFigure(positions[minminidx]+float3(0, 100, 0), positions[maxminidx], 5, 5, 600, 0);
 			}
 			else {
-				groups[currentBattleGroup].MoveTurnTowards(positions[minminidx], float3(ai->map.w*0.5f, 0, ai->map.h*0.5f));
+				groups[currentBattleGroup].AttackMoveToSpot(positions[minminidx]);
 				ai->cb->CreateLineFigure(positions[minminidx]+float3(0, 100, 0), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f), 5, 5, 600, 0);
 			}
 		} else {
@@ -748,7 +748,7 @@ void TopLevelAI::FindPointerTargets()
 		for (UnitGroupAI::UnitAISet::iterator it = git->units.begin(); it != git->units.end(); ++it) {
 			int myid = it->first;
 			const UnitDef* myud = ai->cb->GetUnitDef(myid);
-			if (myud->name != "pointer" || myud->name != "dos" || myud->name != "flow")
+			if (myud->name != "pointer" && myud->name != "dos" && myud->name != "flow")
 				continue;
 
 			float3 pos = ai->cb->GetUnitPos(it->first);
