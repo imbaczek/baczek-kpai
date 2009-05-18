@@ -3,6 +3,7 @@
 #include "Unit.h"
 #include "UnitAI.h"
 #include "Goal.h"
+#include "Rng.h"
 
 UnitAI::UnitAI(BaczekKPAI* ai, Unit* owner): owner(owner), ai(ai), currentGoalId(-1)
 {
@@ -159,6 +160,10 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 				c.AddParam(paramf->x);
 				c.AddParam(paramf->y);
 				c.AddParam(paramf->z);
+				// it's goot to have some units move up close
+				// FIXME move constant to config file
+				if (random() < 0.1)
+					c.id = CMD_MOVE;
 			} else { // attack unit
 				c.AddParam(*parami);
 			}
