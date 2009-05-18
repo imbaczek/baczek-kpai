@@ -29,12 +29,16 @@ public:
 	bool is_constructor;
 	bool is_base;
 	bool is_expansion;
+	bool is_spam;
 
 	// unit state flags
 	bool is_producing;
 
 	// last idle state
 	int last_idle_frame;
+
+	// last attacked
+	int last_attacked_frame;
 
 	Unit(BaczekKPAI* g_ai, int id) : global_ai(g_ai), id(id), is_complete(false), is_killed(false),
 		is_producing(false)
@@ -49,4 +53,5 @@ public:
 	static bool IsBase(const UnitDef* ud) { return ud->name == "kernel" || ud->name == "hole" || ud->name == "carrier"; }
 	static bool IsExpansion(const UnitDef* ud) { return ud->name == "window" || ud->name == "socket" || ud->name == "port"; }
 	static bool IsSuperWeapon(const UnitDef* ud) { return ud->name == "terminal" || ud->name == "firewall" || ud->name == "obelisk"; }
+	static bool IsSpam(const UnitDef* ud) { return ud->name == "bit" || ud->name == "bug" || ud->name == "exploit" || ud->name == "packet"; }
 };
