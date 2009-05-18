@@ -34,6 +34,7 @@ GoalProcessor::goal_process_t UnitGroupAI::ProcessGoal(Goal* goal)
 			ProcessBuildExpansion(goal);
 			return PROCESS_CONTINUE;
 
+		case MOVE:
 		case RETREAT:
 			if (goal->params.empty())
 				return PROCESS_POP_CONTINUE;
@@ -149,7 +150,7 @@ void UnitGroupAI::ProcessBuildExpansion(Goal* goal)
 			<< " " << goal->params[0] << ")" << std::endl;
 		uai->AddGoal(g);
 		goal->start();
-		usedUnits.insert(unit->id);
+		usedUnits.insert(std::make_pair(unit->id, g->priority));
 		usedGoals.insert(goal->id);
 		unit2goal[unit->id] = goal->id;
 		goal2unit[goal->id] = unit->id;
@@ -174,11 +175,17 @@ void UnitGroupAI::ProcessRetreatMove(Goal* goal)
 		UnitAIPtr uai = v.second;
 		Unit* unit = uai->owner;
 		assert(unit);
-		if (usedUnits.find(unit->id) != usedUnits.end())
+
+		std::map<int, int>::iterator used = usedUnits.find(unit->id);
+		if (used != usedUnits.end() && used->second >= goal->priority)
 			continue;
+		if (used != usedUnits.end() && used->second < goal->priority)
+			ailog->info() << "overriding move goal due to lower priority" << std::endl;
+
 		if (uai->HaveGoalType(RETREAT, goal->priority))
 			continue;
-		usedUnits.insert(unit->id);
+
+		usedUnits.insert(std::make_pair(unit->id, goal->priority));
 
 		ailog->info() << "gave " << unit->id << " RETREAT to " << rallyPoint << std::endl;
 		Goal* g = CreateRetreatGoal(*uai, goal->timeoutFrame);
@@ -211,11 +218,14 @@ void UnitGroupAI::ProcessAttack(Goal* goal)
 		UnitAIPtr uai = v.second;
 		Unit* unit = uai->owner;
 		assert(unit);
-		if (usedUnits.find(unit->id) != usedUnits.end())
+
+		std::map<int, int>::iterator used = usedUnits.find(unit->id);
+		if (used != usedUnits.end() && used->second >= goal->priority)
 			continue;
+
 		if (uai->HaveGoalType(ATTACK, goal->priority))
 			continue;
-		usedUnits.insert(unit->id);
+		usedUnits.insert(std::make_pair(unit->id, goal->priority));
 
 		assert(goal->params.size() >= 1);
 
@@ -286,8 +296,8 @@ void UnitGroupAI::RetreatUnusedUnits()
 		return;
 	}
 
-	for (std::set<int>::iterator it = usedUnits.begin(); it != usedUnits.end(); ++it) {
-		ailog->info() << (*it) << " is used" << std::endl;
+	for (std::map<int, int>::iterator it = usedUnits.begin(); it != usedUnits.end(); ++it) {
+		ailog->info() << it->first << " is used" << std::endl;
 	}
 
 	for (UnitAISet::iterator it = units.begin(); it != units.end(); ++it) {
@@ -518,11 +528,11 @@ void UnitGroupAI::SetupFormation(float3 point)
 
 void UnitGroupAI::AttackMoveToSpot(float3 dest)
 {
-	Goal* g = Goal::GetGoal(Goal::CreateGoal(10, ATTACK));
+	Goal* g = Goal::GetGoal(Goal::CreateGoal(11, ATTACK));
 	assert(g);
 
 	g->params.push_back(dest);
-	g->timeoutFrame = ai->cb->GetCurrentFrame() + 30*GAME_SPEED;
+	g->timeoutFrame = ai->cb->GetCurrentFrame() + 60*GAME_SPEED;
 	AddGoal(g);
 }
 

@@ -93,6 +93,7 @@ public:
 	MapInfo map;
 
 	vector<float3> geovents;
+	set<int> enemyBases;
 
 	InfluenceMap *influence;
 	PythonScripting *python;

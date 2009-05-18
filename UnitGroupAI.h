@@ -29,7 +29,7 @@ public:
 	typedef std::map<int, UnitAIPtr> UnitAISet;
 
 	UnitAISet units;
-	std::set<int> usedUnits;
+	std::map<int, int> usedUnits;
 	std::set<int> usedGoals;
 	std::map<int, int> unit2goal;
 	std::map<int, int> goal2unit;

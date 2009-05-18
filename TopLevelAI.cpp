@@ -27,7 +27,7 @@ TopLevelAI::TopLevelAI(BaczekKPAI* theai)
 
 	// initially, gather
 	attackState = AST_GATHER;
-	lastRetreatTime = -10000;
+	lastRetreatTime = lastBattleRetreatTime = -10000;
 
 	queuedConstructors = 0;
 }
@@ -95,6 +95,9 @@ GoalProcessor::goal_process_t TopLevelAI::ProcessGoal(Goal* g)
 		case BUILD_CONSTRUCTOR:
 			ProcessBuildConstructor(g);
 			break;
+		case DEFEND_AREA:
+			ProcessDefend(g);
+			break;
 		default:
 			ailog->info() << "unknown goal type: " << g->type << " params "
 				<< g->params.size() << std::endl;
@@ -131,6 +134,35 @@ void TopLevelAI::ProcessBuildExpansion(Goal* g)
 		builders->AddGoal(newgoal);
 		skippedGoals.insert(g->id);
 	}
+}
+
+void TopLevelAI::ProcessDefend(Goal* g)
+{
+	ailog->info() << "goal " << g->id << ": DEFEND_AREA (" << g->params[0] << ")" << std::endl;
+	if (g->is_executing() || skippedGoals.find(g->id) == skippedGoals.end())
+		return;
+	const float3& pos = boost::get<float3>(g->params[0]);
+	float3 realpos;
+	int inf = 0;
+	ai->influence->FindLocalMinNear(pos, realpos, inf);
+	ailog->info() << "defense: sent to (" << realpos << ") - influence " << inf << std::endl;
+
+	Goal* newgoal = Goal::GetGoal(Goal::CreateGoal(g->priority*10, MOVE));
+
+	g->OnAbort(AbortGoal(*newgoal));
+	g->OnAbort(RemoveGoalFromSkipped(*this));
+	g->OnComplete(CompleteGoal(*newgoal));
+	g->OnComplete(RemoveGoalFromSkipped(*this));
+
+	newgoal->OnComplete(CompleteGoal(*g));
+	newgoal->OnStart(StartGoal(*g));
+	newgoal->OnAbort(AbortGoal(*g));
+
+	newgoal->params.push_back(realpos);
+
+	skippedGoals.insert(g->id);
+
+	groups[currentAssignGroup].AddGoal(newgoal);
 }
 
 void TopLevelAI::ProcessBuildConstructor(Goal* g)
@@ -408,6 +440,7 @@ void TopLevelAI::FindBattleGroupGoals()
 		<< " battle group size: " << groups[currentBattleGroup].units.size() << std::endl;
 
 	int frameNum = ai->cb->GetCurrentFrame();
+	float3 midpos = groups[currentBattleGroup].GetGroupMidPos();
 
 	// swap groups with some probability
 	// TODO be smarter here
@@ -416,16 +449,18 @@ void TopLevelAI::FindBattleGroupGoals()
 	int cbgsize = groups[currentBattleGroup].units.size();
 	if (!groups[currentAssignGroup].units.empty()
 			&& cagsize * 0.8 > cbgsize
-			&& random() < 0.5 && lastSwapTime + 180*GAME_SPEED < frameNum) {
+			&& random() < 0.5 && lastSwapTime + 180*GAME_SPEED < frameNum
+			&& !ImportantTargetInRadius(midpos, 1000)) {
 		ai->cb->SendTextMsg("Battle groups swapped!", 0);
 		SwapBattleGroups();
 		swapped = true;
 	}
 
+
 	// change state with some probability
 	// TODO be smarter about this
 	// TODO move constants to config file
-	bool healthDepleted = (float)groups[currentBattleGroup].GetGroupHealth()/(float)attackStartHealth < 0.5;
+	bool healthDepleted = (float)groups[currentBattleGroup].GetGroupHealth()/(float)attackStartHealth < 0.2;
 	if (!groups[currentBattleGroup].units.empty()) {
 		if (!healthDepleted && attackState == AST_GATHER
 				&& lastStateChangeTime + 90*GAME_SPEED < frameNum
@@ -438,8 +473,9 @@ void TopLevelAI::FindBattleGroupGoals()
 			SetAttackState(AST_GATHER);
 			ai->cb->SendTextMsg("set mode to gather (hd)", 0);
 		}
-		else if (random() < 0.1) {
+		else if (!ImportantTargetInRadius(midpos, 1000) && random() < 0.1) {
 			if (attackState == AST_ATTACK) {
+				
 				// not so smart, toggle state
 				SetAttackState(AST_GATHER);
 				ai->cb->SendTextMsg("set mode to gather", 0);
@@ -485,6 +521,18 @@ void TopLevelAI::FindGoalsGather()
 	float3 foundSpot;
 	int found = -1;
 	
+	if (groups[currentAssignGroup].units.size() >= 250) {
+		// rush enemy hq
+		for (std::set<int>::iterator it = ai->enemyBases.begin(); it != ai->enemyBases.end(); ++it) {
+			const UnitDef* ud = ai->cheatcb->GetUnitDef(*it);
+			if (!ud)
+				continue;
+			found = 1;
+			foundSpot = ai->cheatcb->GetUnitPos(*it);
+			goto assign_group_found;
+		}
+	}
+
 	for (int i = 0; i<numenemies; ++i) {
 		float3 pos = ai->cheatcb->GetUnitPos(enemies[i]);
 		float tmp = pos.SqDistance2D(gatherSpot);
@@ -495,30 +543,6 @@ void TopLevelAI::FindGoalsGather()
 		}
 	}
 
-	/* FIXME ultraslow!
-	// no enemies near base, find some near expansion
-	if (found == -1) {
-		ai->influence->FindLocalMinima(256, values, positions);
-		found = -1;
-		sqdist = FLT_MAX;
-		std::vector<int> foes;
-		for (int i = 0; i<values.size(); ++i) {
-			int uid;
-			float tmp = expansions->SqDistanceClosestUnit(positions[i], &uid, NULL);
-			// less than 0 means not reachable
-			if (tmp >= 0 && tmp < sqdist && sqdist < 1536*1536) {
-				ai->GetEnemiesInRadius(positions[i], 1536, foes);
-				if (foes.empty())
-					continue;
-				sqdist = tmp;
-				found = i;
-			}
-		}
-		if (found >= 0)
-			foundSpot = positions[found];
-	}
-	*/
-
 	// if no enemies found, stay at base
 	if (found != -1) {
 		groups[currentAssignGroup].rallyPoint = foundSpot;
@@ -527,44 +551,21 @@ void TopLevelAI::FindGoalsGather()
 	else
 		groups[currentAssignGroup].rallyPoint = gatherSpot;
 
-	/* FIXME very slow
-	// battle group
-	// if there are no expansions, gather at base
-	if (expansions->units.empty()) {
-		groups[currentBattleGroup].rallyPoint = gatherSpot;
-	} else {
-		// better spot - expansion closest to enemy 
-		if (values.empty())
-			ai->influence->FindLocalMinima(256, values, positions);
+assign_group_found:;
 
-		// first, find minimum is closest to our base
-		// then, find which expansion is closest to this minimum
-		// gather there
-		found = -1;
-		sqdist = FLT_MAX;
-		for (int i = 0; i<values.size(); ++i) {
-			if (values[i] >= 0)
-				continue;
-			int uid;
-			float tmp = expansions->SqDistanceClosestUnit(positions[i], &uid, NULL);
-			// less than 0 means not reachable
-			if (tmp >= 0 && tmp < sqdist) {
-				sqdist = tmp;
-				found = i;
+	int influence = INT_MAX;
+	for (std::vector<float3>::iterator it = ai->geovents.begin(); it != ai->geovents.end(); ++it) {
+		numenemies = ai->cheatcb->GetEnemyUnits(enemies, *it, 256);
+		if (numenemies) {
+			if (influence == INT_MAX || random() < 0.5) {
+				foundSpot = *it;
+				influence = std::min(ai->influence->GetAtXY(it->x, it->z), influence);
 			}
 		}
-		// if not found, bail out
-		if (found == -1) {
-			groups[currentBattleGroup].rallyPoint = gatherSpot;
-		} else {
-			// now, find the expansion
-			int uid;
-			expansions->SqDistanceClosestUnit(positions[found], &uid, NULL);
-			// set the rally point
-			groups[currentBattleGroup].rallyPoint = random_offset_pos(ai->cb->GetUnitPos(uid), 256, 768);
-		}
 	}
-	*/
+	if (influence != INT_MAX) {
+		groups[currentBattleGroup].rallyPoint = foundSpot;
+	}
 
 	// issue retreat goals every 30s or so
 	int frameNum = ai->cb->GetCurrentFrame();
@@ -573,12 +574,14 @@ void TopLevelAI::FindGoalsGather()
 		RetreatGroup(&groups[currentAssignGroup]);
 		ai->cb->CreateLineFigure(rootSpot+float3(0, 50, 0), groups[currentAssignGroup].rallyPoint+float3(0, 50, 0), 5, 10, 900, 0);
 		ai->cb->SendTextMsg("retreating assign group", 0);
+	}
 
-		if (attackState == AST_GATHER) {
-			RetreatGroup(&groups[currentBattleGroup]);
-			ai->cb->CreateLineFigure(rootSpot+float3(0, 50, 0), groups[currentBattleGroup].rallyPoint+float3(0, 50, 0), 5, 10, 900, 0);
-			ai->cb->SendTextMsg("retreating battle group", 0);
-		}
+	float3 midpos = groups[currentBattleGroup].GetGroupMidPos();
+	if (attackState == AST_GATHER && lastBattleRetreatTime + 10*GAME_SPEED < frameNum && !ImportantTargetInRadius(midpos, 1000)) {
+		lastBattleRetreatTime = frameNum;
+		groups[currentBattleGroup].AttackMoveToSpot(groups[currentBattleGroup].rallyPoint);
+		ai->cb->CreateLineFigure(rootSpot+float3(0, 50, 0), groups[currentBattleGroup].rallyPoint+float3(0, 50, 0), 5, 10, 900, 0);
+		ai->cb->SendTextMsg("retreating battle group", 0);
 	}
 	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
@@ -743,7 +746,7 @@ void TopLevelAI::FindPointerTargets()
 		for (UnitGroupAI::UnitAISet::iterator it = git->units.begin(); it != git->units.end(); ++it) {
 			int myid = it->first;
 			const UnitDef* myud = ai->cb->GetUnitDef(myid);
-			if (myud->name != "pointer")
+			if (myud->name != "pointer" || myud->name != "dos" || myud->name != "flow")
 				continue;
 
 			float3 pos = ai->cb->GetUnitPos(it->first);
@@ -824,7 +827,8 @@ void TopLevelAI::FindPointerTargets()
 					attack.AddParam(nmypos.z);
 					ai->cb->GiveOrder(myid, &attack);
 				}
-				else if (smallTargets >= 1) { // FIXME move constant to data
+				else if (smallTargets >= 1
+						&& (randint(1, 20) < smallTargets || ai->influence->GetAtXY(pos.x, pos.z) < 0)) { // FIXME move constant to data
 					// if there is a lot of enemies nearby, suspend current goal and stop
 					ailog->info() << "pointer " << myid << " suspending goal due to danger" << std::endl;
 					if (goal) {
@@ -856,6 +860,20 @@ void TopLevelAI::FindPointerTargets()
 	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
 
+
+bool TopLevelAI::ImportantTargetInRadius(float3 pos, float radius)
+{
+	int num;
+	int enemies[MAX_UNITS];
+	num = ai->cheatcb->GetEnemyUnits(enemies, pos, radius);
+
+	for (int i = 0; i<num; ++i) {
+		const UnitDef* ud = ai->cheatcb->GetUnitDef(enemies[i]);
+		if (ud && (Unit::IsExpansion(ud) || Unit::IsBase(ud) || ud->name == "pointer"))
+			return true;
+	}
+	return false;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
@@ -967,5 +985,53 @@ void TopLevelAI::UnitIdle(Unit* unit)
 		Goal* g = Goal::GetGoal(unit->ai->currentGoalId);
 		if (g && !g->is_suspended())
 			unit->ai->CompleteCurrentGoal();
+	}
+}
+
+void TopLevelAI::UnitDamaged(Unit* unit, int attackerId, float damage, float3 dir)
+{
+	if (ai->cb->GetUnitAllyTeam(attackerId) == ai->cb->GetMyAllyTeam())
+		return;
+	if (damage < 0.1)
+		return;
+	if (ai->cb->GetUnitHealth(unit->id) <= 0)
+		return;
+
+	const UnitDef* ud = ai->cb->GetUnitDef(unit->id);
+	assert(ud);
+
+
+	int frameNum = ai->cb->GetCurrentFrame();
+
+	// add defend goal
+	if (unit->last_attacked_frame + 20*GAME_SPEED < frameNum
+				&& (unit->is_base || unit->is_expansion || ud->name == "pointer")) {
+		Goal* goal = Goal::GetGoal(Goal::CreateGoal(15 + unit->is_base, DEFEND_AREA));
+		if (attackerId > 0) {
+			goal->params.push_back(ai->cheatcb->GetUnitPos(attackerId));
+		} else {
+			goal->params.push_back(ai->cb->GetUnitPos(unit->id));
+		}
+		goal->timeoutFrame = frameNum + GAME_SPEED*20;
+		ailog->info() << "adding DEFEND goal " << goal->id << std::endl;
+		AddGoal(goal);
+	}
+	
+	unit->last_attacked_frame = frameNum;
+}
+
+
+void TopLevelAI::EnemyDestroyed(int enemy, Unit* attacker)
+{
+	const UnitDef* ud = ai->cheatcb->GetUnitDef(enemy);
+
+
+	if (Unit::IsBase || Unit::IsExpansion || Unit::IsSuperWeapon) {
+		// recalculate attack goals
+		float3 midpos = groups[currentBattleGroup].GetGroupMidPos();
+		if (!ImportantTargetInRadius(midpos, 1000)) {
+			FindBattleGroupGoals();
+		}
+		// TODO if a base was here, leave something so it cannot be easily rebuilt
 	}
 }

@@ -196,6 +196,9 @@ void BaczekKPAI::EnemyDestroyed(int enemy,int attacker)
 	cb->SendTextMsg("enemy destroyed", 0);
 	losEnemies.erase(enemy);
 	allEnemies.erase(find(allEnemies.begin(), allEnemies.end(), enemy));
+
+	Unit* unit = GetUnit(attacker);
+	toplevel->EnemyDestroyed(enemy, unit);
 }
 
 void BaczekKPAI::UnitIdle(int unit)
@@ -220,6 +223,7 @@ void BaczekKPAI::GotChatMsg(const char* msg,int player)
 
 void BaczekKPAI::UnitDamaged(int damaged,int attacker,float damage,float3 dir)
 {
+	toplevel->UnitDamaged(GetUnit(damaged), attacker, damage, dir);
 }
 
 void BaczekKPAI::UnitMoveFailed(int unit)
@@ -252,6 +256,11 @@ void BaczekKPAI::Update()
 	allEnemies.clear();
 	allEnemies.resize(num);
 	std::copy(unitids, unitids+num, allEnemies.begin());
+
+	if (frame == 1) {
+		// XXX this will fail if used with prespawned units, e.g. missions
+		std::copy(unitids, unitids+num, std::inserter(enemyBases, enemyBases.end()));
+	}
 
 	if ((frame % 30) == 0) {
 		DumpStatus();

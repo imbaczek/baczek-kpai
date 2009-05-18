@@ -176,6 +176,40 @@ not_found:  ;
 }
 
 
+// find a local minimum using gradient walk
+void InfluenceMap::FindLocalMinNear(float3 point, float3& retpoint, int& retval)
+{
+	int x = point.x*scalex;
+	int y = point.z*scaley;
+
+	// find points such that
+	// a b c
+	// d X f
+	// g h i
+	// X is min(a, b, c, d, f, g, h, i, X)
+	bool found;
+	do {
+		int v = map[x][y];
+		found = false;
+		for (int x1 = std::max(0, x-1); x1 < std::min(mapw, x+2); ++x1) {
+			for (int y1 = std::max(0, y-1); y1 < std::min(maph, y+2); ++y1) {
+				if (x == x1 && y == y1)
+					continue;
+				if (map[x1][y1] < v) {
+					v = map[x1][y1];
+					x = x1;
+					y = y1;
+					found = true;
+				}
+			}
+		}
+	} while (found);
+
+	retpoint.x = x/scalex;
+	retpoint.z = y/scaley;
+	retval = map[x][y];
+}
+
 /////////////////////////////////////////
 // influence map updating
 

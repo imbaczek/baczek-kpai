@@ -81,4 +81,5 @@ public:
 	void UpdateSingleUnit(int uid, int sign, map_t& themap);
 
 	void FindLocalMinima(float radius, std::vector<int>& values, std::vector<float3>& positions);
+	void FindLocalMinNear(float3 point, float3& retpoint, int& retval);
 };

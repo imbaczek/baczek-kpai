@@ -28,6 +28,7 @@ public:
 	int currentBattleGroup;
 	int currentAssignGroup;
 	int lastRetreatTime;
+	int lastBattleRetreatTime;
 	int lastSwapTime;
 	int lastStateChangeTime;
 	int attackStartHealth;
@@ -43,6 +44,7 @@ public:
 
 	void ProcessBuildExpansion(Goal* g);
 	void ProcessBuildConstructor(Goal* g);
+	void ProcessDefend(Goal* g);
 
 	void AssignUnitToGroup(Unit* unit);
 	void InitBattleGroups();
@@ -60,6 +62,8 @@ public:
 	void FindGoalsAttack();
 	void FindPointerTargets();
 
+	bool ImportantTargetInRadius(float3 pos, float radius);
+
 	void SwapBattleGroups();
 	void SetAttackState(AttackState state);
 
@@ -71,4 +75,6 @@ public:
 
 	void UnitIdle(Unit* unit);
 	void UnitFinished(Unit* unit);
+	void UnitDamaged(Unit* unit, int attackerId, float damage, float3 dir);
+	void EnemyDestroyed(int enemy, Unit* attacker);
 };

@@ -149,7 +149,7 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 			}
 			float3* paramf = boost::get<float3>(&goal->params[0]);
 			int* parami = boost::get<int>(&goal->params[0]);
-			if (!paramf || !parami) {
+			if (!paramf && !parami) {
 				ailog->error() << "invalid param on ATTACK goal" << std::endl;
 				return PROCESS_POP_CONTINUE;
 			}
