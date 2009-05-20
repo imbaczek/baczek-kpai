@@ -155,8 +155,8 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 				return PROCESS_POP_CONTINUE;
 			}
 			Command c;
-			c.id = CMD_FIGHT;
 			if (paramf) { // attack move
+				c.id = CMD_FIGHT;
 				c.AddParam(paramf->x);
 				c.AddParam(paramf->y);
 				c.AddParam(paramf->z);
@@ -165,6 +165,7 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 				if (random() < 0.1)
 					c.id = CMD_MOVE;
 			} else { // attack unit
+				c.id = CMD_ATTACK;
 				c.AddParam(*parami);
 			}
 			ai->cb->GiveOrder(owner->id, &c);
