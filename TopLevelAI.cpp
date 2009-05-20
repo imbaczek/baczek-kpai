@@ -1028,7 +1028,7 @@ void TopLevelAI::EnemyDestroyed(int enemy, Unit* attacker)
 	const UnitDef* ud = ai->cheatcb->GetUnitDef(enemy);
 
 
-	if (Unit::IsBase || Unit::IsExpansion || Unit::IsSuperWeapon) {
+	if (Unit::IsBase(ud) || Unit::IsExpansion(ud) || Unit::IsSuperWeapon(ud)) {
 		// recalculate attack goals
 		float3 midpos = groups[currentBattleGroup].GetGroupMidPos();
 		if (!ImportantTargetInRadius(midpos, 1000)) {
