@@ -196,9 +196,18 @@ void PythonScripting::DumpStatus(int framenum, const std::vector<float3>& geos,
 int PythonScripting::GetBuilderRetreatTimeout(int frameNum)
 {
 	PY_FUNC_SKELETON("get_builder_retreat_timeout", frameNum);
-	return extract_default<int>(ret, 20*GAME_SPEED);
+	return extract_default<int>(ret, frameNum+10*GAME_SPEED);
 }
 
+
+int PythonScripting::GetWantedConstructors(int geospots, int width, int height)
+{
+	PY_FUNC_SKELETON("get_wanted_constructors", geospots, width, height);
+	return extract_default<int>(ret, 4);
+}
+
+///////////////////////////////////////////////////////////////
+// generic config values
 
 int PythonScripting::GetIntValue(const char* name, int def)
 {

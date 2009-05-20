@@ -133,6 +133,12 @@ public:
 		for (int i=0; i<numenemies; ++i)
 			output.push_back(enemies[i]);
 	}
+
+	std::string GetRoleUnitName(const char* role)
+	{
+		const char* side = cb->GetTeamSide(cb->GetMyTeam());
+		return python->GetStringValue((std::string(side)+"_"+role).c_str(), std::string("system"));
+	}
 };
 
 #endif // !defined(AFX_GroupAI_H__10718E36_5CDF_4CD4_8D90_F41311DD2694__INCLUDED_)

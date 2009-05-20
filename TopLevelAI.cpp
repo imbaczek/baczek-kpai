@@ -364,7 +364,6 @@ void TopLevelAI::FindGoalsRetreatBuilders(std::vector<float3>& badSpots)
 				float3 dest = random_offset_pos(basePos, SQUARE_SIZE*10, SQUARE_SIZE*40);
 				Goal* goal = Goal::GetGoal(Goal::CreateGoal(1, RETREAT));
 				goal->params.push_back(dest);
-				// FIXME move constant to data file
 				goal->timeoutFrame = ai->python->GetBuilderRetreatTimeout(ai->cb->GetCurrentFrame());
 				builders->AddGoal(goal);
 				builderRetreatGoalId = goal->id;
@@ -709,19 +708,22 @@ void TopLevelAI::FindBaseBuildGoals()
 		case 0: { // bits
 			for (int i = 0; i<randint(1, 5); ++i) {
 				Command build;
-				build.id = -ai->cb->GetUnitDef("bit")->id;
+				std::string unit = ai->GetRoleUnitName("spam");
+				build.id = -ai->cb->GetUnitDef(unit.c_str())->id;
 				ai->cb->GiveOrder(baseid, &build);
 			}
 			break;
 		}
 		case 1: { // byte
 			Command build;
-			build.id = -ai->cb->GetUnitDef("byte")->id;
+			std::string unit = ai->GetRoleUnitName("heavy");
+			build.id = -ai->cb->GetUnitDef(unit.c_str())->id;
 			ai->cb->GiveOrder(baseid, &build);
 		}
 		case 2: { // pointer
 			Command build;
-			build.id = -ai->cb->GetUnitDef("pointer")->id;
+			std::string unit = ai->GetRoleUnitName("arty");
+			build.id = -ai->cb->GetUnitDef(unit.c_str())->id;
 			ai->cb->GiveOrder(baseid, &build);
 		}
 		default:
@@ -748,6 +750,7 @@ void TopLevelAI::FindPointerTargets()
 		for (UnitGroupAI::UnitAISet::iterator it = git->units.begin(); it != git->units.end(); ++it) {
 			int myid = it->first;
 			const UnitDef* myud = ai->cb->GetUnitDef(myid);
+
 			if (myud->name != "pointer" && myud->name != "dos" && myud->name != "flow")
 				continue;
 
@@ -757,20 +760,30 @@ void TopLevelAI::FindPointerTargets()
 				continue;
 
 			// TODO eliminate constant - 1400 is pointer range
-			numenemies = ai->cb->GetEnemyUnits(enemies, pos, 1400);
+			float radius = ai->python->GetFloatValue((myud->name + "_radius").c_str(), 1000);
+			numenemies = ai->cb->GetEnemyUnits(enemies, pos, radius);
 			int smallTargets = 0;
 			bool stopMoving = false;
 			int foundid = -1;
 			for (int i = 0; i<numenemies; ++i) {
 				const UnitDef* unitdef = ai->cb->GetUnitDef(enemies[i]);
 				assert(unitdef);
-				std::string name = unitdef->name;
-				if (name == "bit" || name == "packet" || name == "exploit" || name == "bug") {
+				if (Unit::IsSpam(unitdef)) {
 					// target not worthy firing at, but we should stop moving anyway
 					++smallTargets;
 					continue;
 				}
-				else {
+				// pointers are base killers
+				else if (myud->name != "pointer"
+					&& (Unit::IsExpansion(unitdef) || Unit::IsBase(unitdef)
+					|| Unit::IsSuperWeapon(unitdef))) {
+					foundid = enemies[i];
+					break;
+				}
+				// doses are heavy unit disablers, flows are skirmishers
+				else if ((myud->name == "dos" || myud->name == "flow")
+					&& !(Unit::IsExpansion(unitdef) || Unit::IsBase(unitdef)
+					|| Unit::IsSuperWeapon(unitdef))) {
 					foundid = enemies[i];
 					break;
 				}
@@ -1031,7 +1044,8 @@ void TopLevelAI::EnemyDestroyed(int enemy, Unit* attacker)
 	if (!ud || Unit::IsBase(ud) || Unit::IsExpansion(ud) || Unit::IsSuperWeapon(ud)) {
 		// recalculate attack goals
 		float3 midpos = groups[currentBattleGroup].GetGroupMidPos();
-		if (!ImportantTargetInRadius(midpos, 1000)) {
+		float importantRadius = ai->python->GetFloatValue("importantRadius", 1000);
+		if (!ImportantTargetInRadius(midpos, importantRadius)) {
 			FindBattleGroupGoals();
 		}
 		// TODO if a base was here, leave something so it cannot be easily rebuilt

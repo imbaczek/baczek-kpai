@@ -41,6 +41,7 @@ public:
 					const std::vector<float3>& enemies);
 
 	int GetBuilderRetreatTimeout(int frameNum);
+	int GetWantedConstructors(int geospots, int mapwidth, int mapheight);
 
 	template<typename T> T extract_default(bp::object obj, T def)
 	{
