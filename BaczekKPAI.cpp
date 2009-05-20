@@ -240,9 +240,6 @@ void BaczekKPAI::Update()
 {
 	boost::timer total;
 	int frame=cb->GetCurrentFrame();
-	std::stringstream ss;
-	ss << "frame " << frame;
-	cb->SendTextMsg(ss.str().c_str(), 0);
 
 	int unitids[MAX_UNITS];
 	int num = cb->GetFriendlyUnits(unitids);
