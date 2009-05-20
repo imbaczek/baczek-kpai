@@ -656,7 +656,7 @@ void TopLevelAI::FindGoalsAttack()
 			if (!enemies.empty()) {
 				for (std::vector<int>::iterator it = enemies.begin(); it != enemies.end(); ++it) {
 					const UnitDef* unitdef = ai->cheatcb->GetUnitDef(*it);
-					if (Unit::IsBase(unitdef) || Unit::IsExpansion(unitdef) || Unit::IsSuperWeapon(unitdef)) {
+					if (unitdef && (Unit::IsBase(unitdef) || Unit::IsExpansion(unitdef) || Unit::IsSuperWeapon(unitdef))) {
 						// found a suitable target
 						Goal* g = Goal::GetGoal(Goal::CreateGoal(11, ATTACK));
 						g->timeoutFrame = 120*GAME_SPEED;
