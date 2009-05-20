@@ -2,6 +2,13 @@
 
 #include <fstream>
 
+#ifdef _MSC_VER
+#pragma warning (disable: 4996) // secure iterators
+#pragma warning (disable: 4244) // int->float conversions
+#pragma warning (disable: 4800) // ...->bool conversions (performance)
+#endif
+
+
 #include "AIExport.h"
 #include "ExternalAI/IGlobalAICallback.h"
 
