@@ -50,4 +50,8 @@ public:
 			return def;
 		}
 	}
+
+	int GetIntValue(const char* name, int def);
+	float GetFloatValue(const char* name, int def);
+	std::string GetStringValue(const char* name, const std::string& def);
 };

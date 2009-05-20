@@ -196,5 +196,26 @@ void PythonScripting::DumpStatus(int framenum, const std::vector<float3>& geos,
 int PythonScripting::GetBuilderRetreatTimeout(int frameNum)
 {
 	PY_FUNC_SKELETON("get_builder_retreat_timeout", frameNum);
-	return extract_default<int>(ret, 0);
+	return extract_default<int>(ret, 20*GAME_SPEED);
+}
+
+
+int PythonScripting::GetIntValue(const char* name, int def)
+{
+	PY_FUNC_SKELETON("get_config_value", name);
+	return extract_default<int>(ret, def);
+}
+
+
+float PythonScripting::GetFloatValue(const char* name, int def)
+{
+	PY_FUNC_SKELETON("get_config_value", name);
+	return extract_default<float>(ret, def);
+}
+
+
+std::string PythonScripting::GetStringValue(const char* name, const std::string& def)
+{
+	PY_FUNC_SKELETON("get_config_value", name);
+	return extract_default<std::string>(ret, def);
 }
