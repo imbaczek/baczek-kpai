@@ -12,16 +12,17 @@
 
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
-#include <boost/spirit/core.hpp>
-#include <boost/spirit/utility/confix.hpp>
-#include <boost/spirit/utility/escape_char.hpp>
-#include <boost/spirit/iterator/multi_pass.hpp>
-#include <boost/spirit/iterator/position_iterator.hpp>
+#include <boost/spirit/include/classic_core.hpp>
+#include <boost/spirit/include/classic_confix.hpp>
+#include <boost/spirit/include/classic_escape_char.hpp>
+#include <boost/spirit/include/classic_multi_pass.hpp>
+#include <boost/spirit/include/classic_position_iterator.hpp>
 
 using namespace json_spirit;
 using namespace std;
 using namespace boost;
 using namespace boost::spirit;
+using namespace boost::spirit::classic;
 
 //
 
