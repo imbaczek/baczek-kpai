@@ -937,7 +937,7 @@ void TopLevelAI::DispatchPackets()
 	c.AddParam(pos.x);
 	c.AddParam(pos.y);
 	c.AddParam(pos.z);
-	c.options |= ALT_KEY;
+	c.options = ALT_KEY;
 	ai->cb->GiveOrder(chosen, &c);
 	ailog->info() << "dispatching packets to " << pos << " from unit " << chosen << std::endl;
 }

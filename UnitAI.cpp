@@ -435,24 +435,38 @@ void UnitAI::CheckStandingInBase()
 {
 	assert(owner);
 
+	if (owner->is_base)
+		return;
+
+	const CCommandQueue* q = ai->cb->GetCurrentUnitCommands(owner->id);
+	if (q->empty()) {
+		return;
+	}
+	else {
+		Command c = *q->begin();
+		if (c.id == CMD_MOVE)
+			return;
+	}
+
 	int friends[MAX_UNITS];
 	int num;
 	float3 pos = ai->cb->GetUnitPos(owner->id);
 
-	num = ai->cb->GetFriendlyUnits(friends, pos, 40);
+	num = ai->cb->GetFriendlyUnits(friends, pos, 24);
 	for (int i = 0; i<num; ++i) {
 		Unit* u = ai->GetUnit(friends[i]);
 		if (u && u->is_base) {
 			float3 newpos = random_offset_pos(pos, 24, 48);
 			Command c;
 			c.id = CMD_INSERT;
-			c.options |= ALT_KEY;
+			c.options = ALT_KEY;
 			c.AddParam(0); // position in queue
 			c.AddParam(CMD_MOVE);
 			c.AddParam(0); // options
 			c.AddParam(newpos.x);
 			c.AddParam(newpos.y);
 			c.AddParam(newpos.z);
+			ai->cb->GiveOrder(owner->id, &c);
 			break;
 		}
 	}
