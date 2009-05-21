@@ -59,13 +59,14 @@ void TopLevelAI::Update()
 	if (frameNum % (GAME_SPEED * 10) == 3) {
 		FindGoals();
 	}
-	if (frameNum % 30 == 0) {
+
+	if (frameNum % GAME_SPEED == 0) {
 		ProcessGoalStack(frameNum);
 	}
 
 	// update unit groups
 	builders->Update();
-	if (frameNum % 30 == 1) {
+	if (frameNum % GAME_SPEED == 1) {
 		builders->RetreatUnusedUnits();
 	} else if (frameNum % GAME_SPEED == 2) {
 		FindPointerTargets();
