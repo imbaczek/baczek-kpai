@@ -62,6 +62,8 @@ public:
 	void FindGoalsAttack();
 	void FindPointerTargets();
 
+	void DispatchPackets();
+
 	bool ImportantTargetInRadius(float3 pos, float radius);
 
 	void SwapBattleGroups();

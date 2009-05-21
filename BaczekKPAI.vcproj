@@ -352,6 +352,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\KPCommands.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Log.h"
 				>
 			</File>

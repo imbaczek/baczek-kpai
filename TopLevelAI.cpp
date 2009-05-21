@@ -8,6 +8,7 @@
 #include "ExternalAI/IAICheats.h"
 #include "float3.h"
 
+#include "KPCommands.h"
 #include "Log.h"
 #include "Goal.h"
 #include "TopLevelAI.h"
@@ -50,7 +51,12 @@ void TopLevelAI::Update()
 		builders->rallyPoint = random_offset_pos(ai->cb->GetUnitPos(bases->units.begin()->first), SQUARE_SIZE*10, SQUARE_SIZE*40);
 	}
 
-	if (frameNum % (GAME_SPEED * 10)  == 3) {
+	if (frameNum % (GAME_SPEED * 10) == 1) {
+		// dispatch before looking for goals
+		DispatchPackets();
+	}
+
+	if (frameNum % (GAME_SPEED * 10) == 3) {
 		FindGoals();
 	}
 	if (frameNum % 30 == 0) {
@@ -63,7 +69,7 @@ void TopLevelAI::Update()
 		builders->RetreatUnusedUnits();
 	} else if (frameNum % GAME_SPEED == 2) {
 		FindPointerTargets();
-	}
+	} 
 
 	bases->Update();
 	expansions->Update();
@@ -900,6 +906,41 @@ bool TopLevelAI::ImportantTargetInRadius(float3 pos, float radius)
 	}
 	return false;
 }
+
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+
+void TopLevelAI::DispatchPackets()
+{
+	std::vector<int> exits;
+
+	// find exits
+	for (std::set<int>::iterator it = ai->myUnits.begin(); it != ai->myUnits.end(); ++it) {
+		Unit* unit = ai->GetUnit(*it);
+		// check if unit is completed
+		if (!unit)
+			continue;
+		const UnitDef* ud = ai->cb->GetUnitDef(*it);
+		if (ud && (ud->name == "port" || ud->name == "connection"))
+			exits.push_back(*it);
+	}
+
+	if (exits.empty())
+		return;
+
+	// TODO something smarter here
+	int chosen = exits[randint(0, exits.size()-1)];
+	float3 pos = random_offset_pos(ai->cb->GetUnitPos(chosen), 64, 512);
+	Command c;
+	c.id = CMD_DISPATCH;
+	c.AddParam(pos.x);
+	c.AddParam(pos.y);
+	c.AddParam(pos.z);
+	c.options |= ALT_KEY;
+	ai->cb->GiveOrder(chosen, &c);
+	ailog->info() << "dispatching packets to " << pos << " from unit " << chosen << std::endl;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
