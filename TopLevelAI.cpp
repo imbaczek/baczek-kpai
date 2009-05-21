@@ -414,7 +414,10 @@ void TopLevelAI::FindGoalsBuildConstructors()
 
 	// FIXME magic number
 	// should be a function of time passed and map size/free geospots
-	if (goalcnt + bldcnt + queuedConstructors < 4 - expansions->units.empty() - groups[currentBattleGroup].units.empty()) {
+	if (builders->units.empty()
+				|| goalcnt + bldcnt + queuedConstructors <
+				ai->python->GetWantedConstructors(ai->geovents.size(), ai->map.w, ai->map.h)
+				- expansions->units.empty() - groups[currentBattleGroup].units.empty()) {
 		ailog->info() << "adding BUILD_CONSTRUCTOR goal" << std::endl;
 		Goal* g = Goal::GetGoal(Goal::CreateGoal(1, BUILD_CONSTRUCTOR));
 		assert(g);
@@ -709,22 +712,31 @@ void TopLevelAI::FindBaseBuildGoals()
 			for (int i = 0; i<randint(1, 5); ++i) {
 				Command build;
 				std::string unit = ai->GetRoleUnitName("spam");
-				build.id = -ai->cb->GetUnitDef(unit.c_str())->id;
-				ai->cb->GiveOrder(baseid, &build);
+				const UnitDef* unitdef = ai->cb->GetUnitDef(unit.c_str());
+				if (unitdef) {
+					build.id = -unitdef->id;
+					ai->cb->GiveOrder(baseid, &build);
+				}
 			}
 			break;
 		}
 		case 1: { // byte
 			Command build;
 			std::string unit = ai->GetRoleUnitName("heavy");
-			build.id = -ai->cb->GetUnitDef(unit.c_str())->id;
-			ai->cb->GiveOrder(baseid, &build);
+			const UnitDef* unitdef = ai->cb->GetUnitDef(unit.c_str());
+			if (unitdef) {
+				build.id = -unitdef->id;
+				ai->cb->GiveOrder(baseid, &build);
+			}
 		}
 		case 2: { // pointer
 			Command build;
 			std::string unit = ai->GetRoleUnitName("arty");
-			build.id = -ai->cb->GetUnitDef(unit.c_str())->id;
-			ai->cb->GiveOrder(baseid, &build);
+			const UnitDef* unitdef = ai->cb->GetUnitDef(unit.c_str());
+			if (unitdef) {
+				build.id = -unitdef->id;
+				ai->cb->GiveOrder(baseid, &build);
+			}
 		}
 		default:
 			break;
