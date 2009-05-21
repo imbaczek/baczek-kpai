@@ -36,7 +36,7 @@ def get_config_value(name):
     return config.get(name, None)
 
 def get_wanted_constructors(geospots, width, height):
-    return min(geospots//4, 3)
+    return max(geospots//4, 1)
 
 
 def game_frame(teamId, frame):
