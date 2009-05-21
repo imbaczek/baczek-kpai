@@ -939,7 +939,8 @@ void TopLevelAI::DispatchPackets()
 	c.AddParam(pos.z);
 	c.options = ALT_KEY;
 	ai->cb->GiveOrder(chosen, &c);
-	ailog->info() << "dispatching packets to " << pos << " from unit " << chosen << std::endl;
+	const UnitDef* ud = ai->cb->GetUnitDef(chosen);
+	ailog->info() << "dispatching packets to " << pos << " from unit " << chosen << " " << ud->name << std::endl;
 }
 
 
