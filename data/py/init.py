@@ -10,6 +10,8 @@ config = {
 
 default_config = {
         'importantRadius': 1000,
+        'maxBaseStuckCount': 3,
+        'baseSearchRadius': 16,
         # units
         'system_spam': 'bit',
         'system_heavy': 'byte',
@@ -24,7 +26,7 @@ default_config = {
         'network_spam': 'packet',
         'network_heavy': 'connection',
         'network_arty': 'flow',
-        'flow_radius': 1000,
+        'flow_radius': 500,
 }
 
 # put default values into the configuration

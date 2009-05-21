@@ -21,6 +21,8 @@ public:
 	BaczekKPAI* ai;
 	int currentGoalId;
 
+	int stuckInBaseCnt;
+
 	on_killed_sig onKilled;
 
 	goal_process_t ProcessGoal(Goal* g);

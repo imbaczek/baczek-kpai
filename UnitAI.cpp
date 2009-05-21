@@ -5,7 +5,11 @@
 #include "Goal.h"
 #include "Rng.h"
 
-UnitAI::UnitAI(BaczekKPAI* ai, Unit* owner): owner(owner), ai(ai), currentGoalId(-1)
+UnitAI::UnitAI(BaczekKPAI* ai, Unit* owner):
+		owner(owner),
+		ai(ai), 
+		currentGoalId(-1),
+		stuckInBaseCnt(0)
 {
 }
 
@@ -452,11 +456,17 @@ void UnitAI::CheckStandingInBase()
 	int num;
 	float3 pos = ai->cb->GetUnitPos(owner->id);
 
-	num = ai->cb->GetFriendlyUnits(friends, pos, 24);
+	num = ai->cb->GetFriendlyUnits(friends, pos, ai->python->GetFloatValue("baseSearchRadius", 16));
 	for (int i = 0; i<num; ++i) {
 		Unit* u = ai->GetUnit(friends[i]);
 		if (u && u->is_base) {
-			float3 newpos = random_offset_pos(pos, 24, 48);
+			// unstuck after a bit of time has passed
+			if (stuckInBaseCnt < ai->python->GetIntValue("maxBaseStuckCount", 3)) {
+				++stuckInBaseCnt;
+				break;
+			}
+			stuckInBaseCnt = 0;
+			float3 newpos = random_offset_pos(pos, 48, 64);
 			Command c;
 			c.id = CMD_INSERT;
 			c.options = ALT_KEY;
