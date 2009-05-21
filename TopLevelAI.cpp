@@ -414,10 +414,9 @@ void TopLevelAI::FindGoalsBuildConstructors()
 
 	// FIXME magic number
 	// should be a function of time passed and map size/free geospots
+	int wantedCtors = ai->python->GetWantedConstructors(ai->geovents.size(), ai->map.w, ai->map.h);
 	if (builders->units.empty()
-				|| goalcnt + bldcnt + queuedConstructors <
-				ai->python->GetWantedConstructors(ai->geovents.size(), ai->map.w, ai->map.h)
-				- expansions->units.empty() - groups[currentBattleGroup].units.empty()) {
+				|| goalcnt + bldcnt + queuedConstructors < wantedCtors - expansions->units.empty() - groups[currentBattleGroup].units.empty()) {
 		ailog->info() << "adding BUILD_CONSTRUCTOR goal" << std::endl;
 		Goal* g = Goal::GetGoal(Goal::CreateGoal(1, BUILD_CONSTRUCTOR));
 		assert(g);

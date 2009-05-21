@@ -398,7 +398,7 @@ void UnitAI::CheckSpamTargets()
 	const CCommandQueue* q = ai->cb->GetCurrentUnitCommands(owner->id);
 	if (!q->empty()) {
 		Command c = *q->begin();
-		if (c.id != CMD_FIGHT)
+		if (c.id != CMD_FIGHT && c.id != CMD_MOVE)
 			return;
 	}
 
