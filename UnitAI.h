@@ -46,6 +46,8 @@ public:
 	void CheckContinueGoal();
 
 	void CheckBuildValid();
+	void CheckSpamTargets();
+	void CheckStandingInBase();
 };
 
 bool operator<(const UnitAI& a, const UnitAI& b);

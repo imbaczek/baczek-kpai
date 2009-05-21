@@ -198,6 +198,12 @@ void UnitAI::Update()
 	} else if (phase == 1) {
 		CheckBuildValid();
 	}
+
+	if (frameNum % GAME_SPEED == owner->id % GAME_SPEED) {
+		CheckStandingInBase();
+		if (owner->is_spam)
+			CheckSpamTargets();
+	}
 }
 
 
@@ -381,6 +387,73 @@ void UnitAI::CheckBuildValid()
 					ai->cb->CreateLineFigure(pos+float3(0, 100, 0), ai->cheatcb->GetUnitPos(*it)+float3(0, 100, 0), 5, 20, 900, 0);
 				}
 			}
+		}
+	}
+}
+
+// check if there are important targets for spam units around
+void UnitAI::CheckSpamTargets()
+{
+	assert(owner);
+	const CCommandQueue* q = ai->cb->GetCurrentUnitCommands(owner->id);
+	if (!q->empty()) {
+		Command c = *q->begin();
+		if (c.id != CMD_FIGHT)
+			return;
+	}
+
+	int num;
+	int enemies[MAX_UNITS];
+	float radius = ai->python->GetFloatValue("spam_radius", 384);
+	float3 pos = ai->cb->GetUnitPos(owner->id);
+	num = ai->cheatcb->GetEnemyUnits(enemies, pos, radius);
+	int found = -1;
+
+	for (int i = 0; i<num; ++i) {
+		const UnitDef* ud = ai->cheatcb->GetUnitDef(enemies[i]);
+		if (!ud)
+			continue;
+		if (Unit::IsConstructor(ud) || ud->name == "pointer" || ud->name == "dos" || ud->name == "flow") {
+			found = enemies[i];
+			break;
+		}
+	}
+	if (found) {
+		Command c;
+		c.id = CMD_INSERT;
+		c.options = ALT_KEY;
+		c.AddParam(0);
+		c.AddParam(CMD_ATTACK);
+		c.AddParam(0);
+		c.AddParam(found);
+		ai->cb->GiveOrder(owner->id, &c);
+	}
+}
+
+// do not stand in base and block construction
+void UnitAI::CheckStandingInBase()
+{
+	assert(owner);
+
+	int friends[MAX_UNITS];
+	int num;
+	float3 pos = ai->cb->GetUnitPos(owner->id);
+
+	num = ai->cb->GetFriendlyUnits(friends, pos, 40);
+	for (int i = 0; i<num; ++i) {
+		Unit* u = ai->GetUnit(friends[i]);
+		if (u && u->is_base) {
+			float3 newpos = random_offset_pos(pos, 24, 48);
+			Command c;
+			c.id = CMD_INSERT;
+			c.options |= ALT_KEY;
+			c.AddParam(0); // position in queue
+			c.AddParam(CMD_MOVE);
+			c.AddParam(0); // options
+			c.AddParam(newpos.x);
+			c.AddParam(newpos.y);
+			c.AddParam(newpos.z);
+			break;
 		}
 	}
 }
