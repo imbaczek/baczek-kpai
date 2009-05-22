@@ -122,6 +122,10 @@ BOOST_PYTHON_MODULE(pykpai)
 		.def("__delitem__", &std_item<std::vector<float3>, float3>::del)
 		;
 	def("SendTextMessage", PythonFunctions::SendTextMessage);
+	
+	scope().attr("GAME_SPEED") = GAME_SPEED;
+	scope().attr("MAX_UNITS") = MAX_UNITS;
+	scope().attr("SQUARE_SIZE") = SQUARE_SIZE;
 }
 
 

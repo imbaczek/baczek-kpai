@@ -2,6 +2,8 @@ import pykpai
 import threading
 import sys
 
+from pykpai import GAME_SPEED, MAX_UNITS, SQUARE_SIZE
+
 config = {
 }
 
@@ -12,6 +14,7 @@ default_config = {
         'importantRadius': 1000,
         'maxBaseStuckCount': 3,
         'baseSearchRadius': 16,
+        'retreatGroupTimeout': 15,
         # units
         'system_spam': 'bit',
         'system_heavy': 'byte',

@@ -419,8 +419,7 @@ void TopLevelAI::FindGoalsBuildConstructors()
 	}
 	ailog->info() << "FindGoal() found " << goalcnt  << " BUILD_CONSTRUCTOR goals" << std::endl;
 
-	// FIXME magic number
-	// should be a function of time passed and map size/free geospots
+	// determine the amount of needed constructors
 	int wantedCtors = ai->python->GetWantedConstructors(ai->geovents.size(), ai->map.w, ai->map.h);
 	if (builders->units.empty()
 				|| goalcnt + bldcnt + queuedConstructors < wantedCtors - expansions->units.empty() - groups[currentBattleGroup].units.empty()) {
@@ -777,7 +776,6 @@ void TopLevelAI::FindPointerTargets()
 			if (ai->influence->GetAtXY(pos.x, pos.z) < 0)
 				continue;
 
-			// TODO eliminate constant - 1400 is pointer range
 			float radius = ai->python->GetFloatValue((myud->name + "_radius").c_str(), 1000);
 			numenemies = ai->cb->GetEnemyUnits(enemies, pos, radius);
 			int smallTargets = 0;
@@ -879,7 +877,6 @@ void TopLevelAI::FindPointerTargets()
 					ai->cb->GiveOrder(myid, &stop);
 				} else {
 					// continue goal if it was aborted recently
-					// FIXME make this work
 					// TODO keep account of which goals were suspended here
 
 					if (goal && goal->is_suspended() && suspendedPointerGoals.find(goal->id) != suspendedPointerGoals.end()) {
@@ -1028,8 +1025,9 @@ void TopLevelAI::RetreatGroup(UnitGroupAI *group, const float3 &dest)
 {
 	Goal* goal = Goal::GetGoal(Goal::CreateGoal(10, RETREAT));
 	goal->params.push_back(dest);
-	// FIXME move constant to data file
-	goal->timeoutFrame = ai->cb->GetCurrentFrame() + 15*GAME_SPEED;
+
+	goal->timeoutFrame = ai->cb->GetCurrentFrame()
+		+ ai->python->GetIntValue("retreatGroupTimeout", 15*GAME_SPEED);
 	group->AddGoal(goal);
 }
 
