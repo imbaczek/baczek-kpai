@@ -18,7 +18,7 @@ protected:
 	std::vector<float3> minimaCachedPositions;
 
 	// partial updates
-	int alliedProgress, enemyProgress;
+	size_t alliedProgress, enemyProgress;
 	bool updateInProgress;
 	bool enemiesDone;
 	std::vector<int> friends, enemies;

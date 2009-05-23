@@ -157,7 +157,7 @@ not_found:  ;
 	// according to the provided radius
 	std::set<int> toDel;
 
-	for (int i = 0; i<positions.size(); ++i) {
+	for (size_t i = 0; i<positions.size(); ++i) {
 		if (toDel.find(i) == toDel.end()) { // only if not marked for deletion already
 			rtree.Query(RTree::AcceptEnclosing(bounds(positions[i].x - radius, positions[i].z - radius, 2*radius, 2*radius)),
 				Visitor(i, radius*radius, toDel, positions));
@@ -281,9 +281,9 @@ bool InfluenceMap::UpdatePartial(bool allied, const std::vector<int> &uids)
 {
 	assert(updateInProgress);
 
-	int& progress = (allied ? alliedProgress : enemyProgress);
+	size_t& progress = (allied ? alliedProgress : enemyProgress);
 	int sign = (allied ? 1 : -1);
-	int nextStop = std::min(progress + 50, (int)uids.size()); // XXX make configureable?
+	size_t nextStop = std::min(progress + 50, uids.size()); // XXX make configureable?
 
 	ailog->info() << "influence: partial update of " << (allied ? "friends" : "enemies")
 		<< " from " << progress << " to " << nextStop << std::endl;

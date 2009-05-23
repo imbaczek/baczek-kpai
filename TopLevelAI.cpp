@@ -707,7 +707,7 @@ void TopLevelAI::FindBaseBuildGoals()
 		return;
 
 	int totalUnits = 0;
-	for (int i = 0; i<groups.size(); ++i) {
+	for (size_t i = 0; i<groups.size(); ++i) {
 		totalUnits += groups[i].units.size();
 	}
 
