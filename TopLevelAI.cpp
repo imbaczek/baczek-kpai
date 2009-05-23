@@ -245,7 +245,6 @@ void TopLevelAI::FindGoalsExpansion(std::vector<float3>& badSpots)
 		}
 
 		// calculate priority
-		// TODO priority should be a function of distance and risk
 		float minDistance = bases->DistanceClosestUnit(geo, 0, 0);
 
 		// can't reach
@@ -264,7 +263,9 @@ void TopLevelAI::FindGoalsExpansion(std::vector<float3>& badSpots)
 		// TODO make constant configurable
 		float k = 15;
 		float divider = (float)(ai->map.w + ai->map.h);
-		int priority = influence - (int)((minDistance/divider)*k);
+		int priority = ai->python->GetBuildSpotPriority(minDistance, influence, ai->map.w, ai->map.h, INT_MAX);
+		if (priority == INT_MAX)
+			priority = influence - (int)((minDistance/divider)*k);
 		ailog->info() << "geo at " << geo << " distance to nearest base squared " << minDistance
 			<< " influence " << influence << " priority " << priority << std::endl;
 		// check if there already is a goal with this position
@@ -360,15 +361,15 @@ void TopLevelAI::FindGoalsRetreatBuilders(std::vector<float3>& badSpots)
 		// unless there are no bases or the group is reasonably close to the base
 		if (!bases->units.empty()) {
 			// TODO move to data file
-			const int maxDist = 40;
-			const int minDist = 10;
-			const int checkOffset = 10;
+			const int maxDist = ai->python->GetIntValue("builderRetreatMaxDist", 40*SQUARE_SIZE);
+			const int minDist = ai->python->GetIntValue("builderRetreatMinDist", 10*SQUARE_SIZE);
+			const int checkOffset = ai->python->GetIntValue("builderRetreatCheckOffset", 10*SQUARE_SIZE);
 			const int checkDist = maxDist+checkOffset;
 			float3 basePos = ai->cb->GetUnitPos(bases->units.begin()->second->owner->id);
 			float3 midPos = builders->GetGroupMidPos();
-			if (midPos.SqDistance2D(basePos) > SQUARE_SIZE*SQUARE_SIZE*checkDist*checkDist) {
+			if (midPos.SqDistance2D(basePos) > checkDist*checkDist) {
 				// not close enough
-				float3 dest = random_offset_pos(basePos, SQUARE_SIZE*10, SQUARE_SIZE*40);
+				float3 dest = random_offset_pos(basePos, minDist, maxDist);
 				Goal* goal = Goal::GetGoal(Goal::CreateGoal(1, RETREAT));
 				goal->params.push_back(dest);
 				goal->timeoutFrame = ai->python->GetBuilderRetreatTimeout(ai->cb->GetCurrentFrame());
@@ -470,7 +471,7 @@ void TopLevelAI::FindBattleGroupGoals()
 	bool healthDepleted = (float)groups[currentBattleGroup].GetGroupHealth()/(float)attackStartHealth < 0.2;
 	if (!groups[currentBattleGroup].units.empty()) {
 		if (!healthDepleted && attackState == AST_GATHER
-				&& lastStateChangeTime + 90*GAME_SPEED < frameNum
+				&& ai->python->GetIntValue("attackStateChangeTimeout", lastStateChangeTime + 90*GAME_SPEED) < frameNum
 				&& random() < 0.25) {
 			// try to be smart: if health isn't depleted, attack
 			ai->cb->SendTextMsg("set mode to attack (!hd)", 0);
@@ -480,7 +481,7 @@ void TopLevelAI::FindBattleGroupGoals()
 			SetAttackState(AST_GATHER);
 			ai->cb->SendTextMsg("set mode to gather (hd)", 0);
 		}
-		else if (!ImportantTargetInRadius(midpos, 1000) && random() < 0.1) {
+		else if (!ImportantTargetInRadius(midpos, ai->python->GetFloatValue("importantRadius", 1000)) && random() < 0.1) {
 			if (attackState == AST_ATTACK) {
 				
 				// not so smart, toggle state
@@ -511,7 +512,9 @@ void TopLevelAI::FindGoalsGather()
 	if (groups[currentAssignGroup].units.empty())
 		return;
 
-	float3 gatherSpot = random_offset_pos(groups[currentAssignGroup].GetGroupMidPos(), 256, 768);
+	const float gatherMinOffset = ai->python->GetFloatValue("gatherMinOffset", 256);
+	const float gatherMaxOffset = ai->python->GetFloatValue("gatherMaxOffset", 768);
+	float3 gatherSpot = random_offset_pos(groups[currentAssignGroup].GetGroupMidPos(), gatherMinOffset, gatherMaxOffset);
 	float3 rootSpot = gatherSpot + float3(0, 100, 0); // only for debugging
 
 	std::vector<int> values;
@@ -522,13 +525,17 @@ void TopLevelAI::FindGoalsGather()
 	int enemies[MAX_UNITS];
 	int numenemies;
 
-	numenemies = ai->cheatcb->GetEnemyUnits(enemies, gatherSpot, 1536);
+	const float baseDefenseRadius = ai->python->GetFloatValue("baseDefenseRadius", 1536);
+	numenemies = ai->cheatcb->GetEnemyUnits(enemies, gatherSpot, baseDefenseRadius);
 	// find the closest and sent group there
 	float sqdist = FLT_MAX;
 	float3 foundSpot;
 	int found = -1;
 	
-	if (groups[currentAssignGroup].units.size() >= 250) {
+	int rushBaseUnitCount = ai->python->GetIntValue("rushBaseUnitCount", 250);
+	if (rushBaseUnitCount <= 0)
+		rushBaseUnitCount = 250;
+	if (groups[currentAssignGroup].units.size() >= (size_t)rushBaseUnitCount) {
 		// rush enemy hq
 		for (std::set<int>::iterator it = ai->enemyBases.begin(); it != ai->enemyBases.end(); ++it) {
 			const UnitDef* ud = ai->cheatcb->GetUnitDef(*it);
@@ -537,6 +544,24 @@ void TopLevelAI::FindGoalsGather()
 			found = 1;
 			foundSpot = ai->cheatcb->GetUnitPos(*it);
 			goto assign_group_found;
+		}
+		// no enemy bases, go to some expansion
+		if (found == -1) {
+			found = 1;
+			// FIXME copypasta
+			std::vector<int> candidates;
+			for (std::vector<float3>::iterator it = ai->geovents.begin(); it != ai->geovents.end(); ++it) {
+				numenemies = ai->cheatcb->GetEnemyUnits(enemies, *it, 256);
+				if (numenemies) {
+					candidates.push_back(it - ai->geovents.begin());
+				}
+			}
+
+			if (!candidates.empty()) {
+				int chosen = randint(0, candidates.size()-1);
+				groups[currentBattleGroup].rallyPoint = ai->geovents[candidates[chosen]];
+				goto assign_group_found;
+			}
 		}
 	}
 
@@ -562,18 +587,17 @@ assign_group_found:;
 
 
 
-	int influence = INT_MAX;
+	std::vector<int> candidates;
 	for (std::vector<float3>::iterator it = ai->geovents.begin(); it != ai->geovents.end(); ++it) {
 		numenemies = ai->cheatcb->GetEnemyUnits(enemies, *it, 256);
 		if (numenemies) {
-			if (influence == INT_MAX || random() < 0.5) {
-				foundSpot = *it;
-				influence = std::min(ai->influence->GetAtXY(it->x, it->z), influence);
-			}
+			candidates.push_back(it - ai->geovents.begin());
 		}
 	}
-	if (influence != INT_MAX) {
-		groups[currentBattleGroup].rallyPoint = foundSpot;
+
+	if (!candidates.empty()) {
+		int chosen = randint(0, candidates.size()-1);
+		groups[currentBattleGroup].rallyPoint = ai->geovents[candidates[chosen]];
 	}
 
 	// issue retreat goals every 30s or so

@@ -123,6 +123,7 @@ BOOST_PYTHON_MODULE(pykpai)
 		;
 	def("SendTextMessage", PythonFunctions::SendTextMessage);
 	
+	// export constants
 	scope().attr("GAME_SPEED") = GAME_SPEED;
 	scope().attr("MAX_UNITS") = MAX_UNITS;
 	scope().attr("SQUARE_SIZE") = SQUARE_SIZE;
@@ -210,20 +211,28 @@ int PythonScripting::GetWantedConstructors(int geospots, int width, int height)
 	return extract_default<int>(ret, 4);
 }
 
+
+int PythonScripting::GetBuildSpotPriority(float distance, int influence, int width, int height, int def)
+{
+	PY_FUNC_SKELETON("get_build_spot_priority", distance, influence, width, height);
+	return extract_default<int>(ret, def);
+}
+
 ///////////////////////////////////////////////////////////////
 // generic config values
 
 int PythonScripting::GetIntValue(const char* name, int def)
 {
 	PY_FUNC_SKELETON("get_config_value", name);
-	return extract_default<int>(ret, def);
+	return extract_default<int, double, int>(ret, def);
 }
 
 
-float PythonScripting::GetFloatValue(const char* name, int def)
+float PythonScripting::GetFloatValue(const char* name, float def)
 {
 	PY_FUNC_SKELETON("get_config_value", name);
-	return extract_default<float>(ret, def);
+	// try to extract as float first, if fails, extract int, if fails again, return default
+	return extract_default<double, int, float>(ret, def);
 }
 
 

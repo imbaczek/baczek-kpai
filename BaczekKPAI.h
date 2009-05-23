@@ -137,7 +137,8 @@ public:
 	std::string GetRoleUnitName(const char* role)
 	{
 		const char* side = cb->GetTeamSide(cb->GetMyTeam());
-		return python->GetStringValue((std::string(side)+"_"+role).c_str(), std::string("system"));
+		std::string configval = (std::string(side)+"_"+role);
+		return python->GetStringValue(configval.c_str(), std::string());
 	}
 };
 
