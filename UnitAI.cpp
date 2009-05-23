@@ -421,7 +421,7 @@ void UnitAI::CheckSpamTargets()
 			break;
 		}
 	}
-	if (found) {
+	if (found != -1) {
 		Command c;
 		c.id = CMD_INSERT;
 		c.options = ALT_KEY;
