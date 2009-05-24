@@ -514,10 +514,11 @@ float BaczekKPAI::GetGroundHeight(float x, float y)
 void BaczekKPAI::InitializeUnitDefs()
 {
 	int num = cb->GetNumUnitDefs();
-	const UnitDef** ar = (const UnitDef **)alloca(num*sizeof(void*));
+	const UnitDef** ar = (const UnitDef **)malloc(num*sizeof(void*));
 	cb->GetUnitDefList(ar);
 	unitDefById.reserve(num);
 	std::copy(ar, ar+num, std::back_inserter(unitDefById));
 	ailog->info() << "loaded " << num << " unitdefs" << std::endl;
+	free(ar);
 }
 

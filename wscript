@@ -21,12 +21,13 @@ def configure(conf):
     conf.check_tool('gcc')
     conf.check_tool('gxx')
     conf.check_tool('python')
-    if not conf.env['PYTHON_VERSION']:
-        conf.env['PYTHON_VERSION'] = '2.6'
+    conf.check_python_version()
     conf.check_python_headers()
     conf.check_tool('boost')
+    #conf.check_boost(lib='python filesystem system thread',
     conf.check_boost(lib='signals filesystem python system thread',
            kind='STATIC_BOTH', 
+           static='both',
            score_version=(-1000, 1000),
            tag_minscore=1000,
            mandatory=True)
@@ -37,7 +38,7 @@ def configure(conf):
     conf.env.append_value('CXXFLAGS',  '-Wall')
     import Options
     if Options.platform=='win32':
-        conf.env.append_value('shlib_LINKFLAGS', ['-Wl,--kill-at'])
+        conf.env.append_value('shlib_LINKFLAGS', ['-Wl,--add-stdcall-alias'])
         conf.env['shlib_PATTERN'] = '%s.dll'
     # global conf options
     from Options import options
@@ -71,21 +72,23 @@ def build(bld):
     for f in spring_files:
         bld.new_task_gen(
                 name='copy',
-                before='cxx',
+                before='cxx cc',
                 target=os.path.split(f)[-1],
                 rule='cp -p %s ${TGT}'%f,
                 always=True,
                 on_results=True,
         )
 
+    print bld.env
     skirmishai = bld.new_task_gen(
-            features='cxx cc cshlib',
+            features='cxx cc boost python cshlib',
             includes=['.'] + [os.path.join(bld.env['spring_dir'], x)
                 for x in ('rts', 'rts/System', 'AI/Wrappers',
                     'AI/Wrappers/CUtils', 'AI/Wrappers/LegacyCPP',
-                    'rts/Sim/Misc', 'rts/Game')] \
-                + [bld.env['boost_dir']],
-            source= \
+                    'rts/Sim/Misc', 'rts/Game')],
+            uselib = '''BOOST_SYSTEM BOOST_SIGNALS BOOST_THREAD BOOST_FILESYSTEM
+                        BOOST_PYTHON PYEMBED BOOST''',
+            source = \
                 glob.glob(os.path.join(srcdir, '*.cpp')) +\
                 glob.glob(os.path.join(srcdir, 'GUI', '*.cpp')) +\
                 glob.glob(os.path.join(srcdir, 'json_spirit', '*.cpp')) +\

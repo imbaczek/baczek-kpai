@@ -3,6 +3,7 @@
 #include <cmath>
 #include <boost/foreach.hpp>
 #include <boost/timer.hpp>
+#include <cfloat>
 
 #include "ExternalAI/IGlobalAICallback.h"
 #include "ExternalAI/IAICheats.h"
@@ -386,6 +387,18 @@ void TopLevelAI::FindGoalsRetreatBuilders(std::vector<float3>& badSpots)
 	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
 
+
+// clunky...
+class IsConstructor : std::unary_function<int, bool> {
+public:
+	BaczekKPAI *ai;
+	IsConstructor(BaczekKPAI* a):ai(a) {}
+	bool operator()(int uid) {
+		return ai->unitTable[uid]->is_constructor;
+	}
+};
+
+
 /// decides whether to build constructors
 void TopLevelAI::FindGoalsBuildConstructors()
 {
@@ -393,16 +406,6 @@ void TopLevelAI::FindGoalsBuildConstructors()
 	/////////////////////////////////////////////////////
 	// count own constructors and BUILD_CONSTRUCTOR goals
 	ailog->info() << "FindGoal() constructors" << std::endl;
-
-	// clunky...
-	class IsConstructor : std::unary_function<int, bool> {
-	public:
-		BaczekKPAI *ai;
-		IsConstructor(BaczekKPAI* a):ai(a) {}
-		bool operator()(int uid) {
-			return ai->unitTable[uid]->is_constructor;
-		}
-	};
 
 	int bldcnt = std::count_if(ai->myUnits.begin(), ai->myUnits.end(), IsConstructor(ai));
 	ailog->info() << "FindGoal() found " << bldcnt  << " constructors" << std::endl;

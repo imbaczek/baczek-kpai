@@ -47,7 +47,7 @@ public:
 	template<typename T> T extract_default(bp::object obj, T def)
 	{
 		try {
-			return extract<T>(obj);
+			return bp::extract<T>(obj);
 		} catch (bp::error_already_set&) {
 			PyErr_Print();
 			return def;
@@ -57,11 +57,11 @@ public:
 	template<typename T1, typename T2, typename Ret> Ret extract_default(bp::object obj, Ret def)
 	{
 		try {
-			return Ret(extract<T1>(obj));
+			return Ret(bp::extract<T1>(obj));
 		} catch (bp::error_already_set&) {
 		}
 		try {
-			return Ret(extract<T2>(obj));
+			return Ret(bp::extract<T2>(obj));
 		} catch (bp::error_already_set&) {
 			PyErr_Print();
 			return def;
