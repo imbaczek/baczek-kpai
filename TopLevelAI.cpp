@@ -254,13 +254,11 @@ void TopLevelAI::FindGoalsExpansion(std::vector<float3>& badSpots)
 		}
 
 		int influence = ai->influence->GetAtXY(geo.x, geo.z);
-		// TODO make constant configurable
-		if (influence < 0) {
+		if (influence < ai->python->GetIntValue("expansionInfluenceLimit", 0)) {
 			ailog->info() << "too risky to build an expansion at " << geo << std::endl;
 			continue;
 		}
 
-		// TODO make constant configurable
 		float k = 15;
 		float divider = (float)(ai->map.w + ai->map.h);
 		int priority = ai->python->GetBuildSpotPriority(minDistance, influence, ai->map.w, ai->map.h, INT_MAX);
@@ -360,7 +358,6 @@ void TopLevelAI::FindGoalsRetreatBuilders(std::vector<float3>& badSpots)
 		// retreat to one of the bases
 		// unless there are no bases or the group is reasonably close to the base
 		if (!bases->units.empty()) {
-			// TODO move to data file
 			const int maxDist = ai->python->GetIntValue("builderRetreatMaxDist", 40*SQUARE_SIZE);
 			const int minDist = ai->python->GetIntValue("builderRetreatMinDist", 10*SQUARE_SIZE);
 			const int checkOffset = ai->python->GetIntValue("builderRetreatCheckOffset", 10*SQUARE_SIZE);
@@ -468,7 +465,8 @@ void TopLevelAI::FindBattleGroupGoals()
 	// change state with some probability
 	// TODO be smarter about this
 	// TODO move constants to config file
-	bool healthDepleted = (float)groups[currentBattleGroup].GetGroupHealth()/(float)attackStartHealth < 0.2;
+	float healthRetreatLimit = ai->python->GetFloatValue("battleGroupHealthRetreatLimit", 0.2);
+	bool healthDepleted = (float)groups[currentBattleGroup].GetGroupHealth()/(float)attackStartHealth < healthRetreatLimit;
 	if (!groups[currentBattleGroup].units.empty()) {
 		if (!healthDepleted && attackState == AST_GATHER
 				&& ai->python->GetIntValue("attackStateChangeTimeout", lastStateChangeTime + 90*GAME_SPEED) < frameNum

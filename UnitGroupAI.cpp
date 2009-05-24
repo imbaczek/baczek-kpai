@@ -87,7 +87,6 @@ void UnitGroupAI::ProcessBuildConstructor(Goal* goal)
 		assert(unit);
 		if (unit->is_producing)
 			continue;
-		// FIXME move to a data file
 		Goal *g = Goal::GetGoal(Goal::CreateGoal(goal->priority, BUILD_CONSTRUCTOR));
 		assert(g);
 		g->parent = goal->id;
@@ -124,7 +123,6 @@ void UnitGroupAI::ProcessBuildExpansion(Goal* goal)
 		// TODO FIXME used goals aren't freed when units assigned to them die
 		if (usedGoals.find(goal->id) != usedGoals.end())
 			continue;
-		// FIXME move to a data file
 		Goal *g = Goal::GetGoal(Goal::CreateGoal(1, BUILD_EXPANSION));
 		assert(g);
 		assert(goal->params.size() >= 1);

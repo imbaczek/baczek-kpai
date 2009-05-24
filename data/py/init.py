@@ -22,6 +22,9 @@ default_config = {
         'retreatGroupTimeout': 15*GAME_SPEED,
         'attackStateChangeTimeout': 90*GAME_SPEED,
 
+        # percent of starting health below which battle group retreats
+        'battleGroupHealthRetreatLimit': 0.2,
+
         'gatherMinOffset': 8.0*SQUARE_SIZE,
         'gatherMaxOffset': 24.0*SQUARE_SIZE,
 
@@ -35,6 +38,8 @@ default_config = {
         'builderRetreatMaxDist': 40.0*SQUARE_SIZE,
         'builderRetreatMinDist': 10.0*SQUARE_SIZE,
         'builderRetreatCheckOffset': 10.0*SQUARE_SIZE,
+        # influence: <0 - enemy zone, >0 - friendly zone
+        'expansionInfluenceLimit': 0,
 
         # units
         'spam_radius': 384.0,
