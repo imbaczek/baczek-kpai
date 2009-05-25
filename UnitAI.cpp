@@ -467,9 +467,12 @@ void UnitAI::CheckStandingInBase()
 			stuckInBaseCnt = 0;
 			float3 newpos;
 			// don't try to move back into the base
+			// also don't loop infinitely
+			int count = 50;
 			do {
 				newpos = random_offset_pos(pos, 48, 72);
-			} while (CheckPosInBase(newpos));
+				--count;
+			} while (count && CheckPosInBase(newpos));
 
 			Command c;
 			c.id = CMD_INSERT;
