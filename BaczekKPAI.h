@@ -22,7 +22,8 @@
 #include "TopLevelAI.h"
 
 
-const char AI_NAME[]="Baczek KP AI";
+const char AI_NAME[] = "Baczek's KP AI";
+const char AI_VERSION[] = "1.0";
 
 using namespace std;
 
