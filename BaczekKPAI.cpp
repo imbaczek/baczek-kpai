@@ -199,7 +199,7 @@ void BaczekKPAI::EnemyDamaged(int damaged, int attacker, float damage,
 
 void BaczekKPAI::EnemyDestroyed(int enemy,int attacker)
 {
-	cb->SendTextMsg("enemy destroyed", 0);
+	SendTextMsg("enemy destroyed", 0);
 	losEnemies.erase(enemy);
 	allEnemies.erase(find(allEnemies.begin(), allEnemies.end(), enemy));
 
