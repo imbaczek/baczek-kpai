@@ -79,9 +79,8 @@ def build(bld):
                 on_results=True,
         )
 
-    print bld.env
     skirmishai = bld.new_task_gen(
-            features='cxx cc boost python cshlib',
+            features='cxx cc cshlib',
             includes=['.'] + [os.path.join(bld.env['spring_dir'], x)
                 for x in ('rts', 'rts/System', 'AI/Wrappers',
                     'AI/Wrappers/CUtils', 'AI/Wrappers/LegacyCPP',
