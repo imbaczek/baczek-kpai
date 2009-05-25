@@ -38,11 +38,15 @@ cp -p "$AIDLL" "$DISTDIR"
 cp -p data/*.lua "$DISTDIR"
 cp -p data/py/*.py "$DISTDIR/py"
 
+# docs
+cp -p README_BaczekKPAI.txt "$TEMPDIR"
+
 # dll dependencies
 cp -p "$DEPSDIR"/* "$TEMPDIR"
 
 DIR=`pwd`
+ARCHIVENAME="$DIR/$AISHORTNAME-$AIVERSION.zip"
 
-(cd "$TEMPDIR" && $ZIP "$DIR/$AISHORTNAME-$AIVERSION.zip" *)
+(cd "$TEMPDIR" && $ZIP "$ARCHIVENAME" *)
 
 rm -rf "$TEMPDIR"
