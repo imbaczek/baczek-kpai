@@ -793,6 +793,9 @@ void TopLevelAI::FindPointerTargets()
 			int myid = it->first;
 			const UnitDef* myud = ai->cb->GetUnitDef(myid);
 
+			if (!myud)
+				continue;
+
 			if (myud->name != "pointer" && myud->name != "dos" && myud->name != "flow")
 				continue;
 

@@ -55,6 +55,8 @@ int InfluenceMap::GetAtXY(int x, int y)
 {
 	x = x*scalex;
 	y = y*scaley;
+	if (x < 0 || x >= mapw || y < 0 || y >= maph)
+		return 0;
 	return map[x][y];
 }
 
