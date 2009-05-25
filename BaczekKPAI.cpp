@@ -90,16 +90,18 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	cb->SendTextMsg(datadir, 0);
 
 	ailog = new Log(callback);
-	ailog->open(aiexport_getDataDir(true, "log.txt"));
+	
+	std::string logname = std::string(datadir) + "/log.txt";
+	ailog->open(logname.c_str());
 	ailog->info() << "Logging initialized.\n";
 	ailog->info() << "Baczek KP AI compiled on " __TIMESTAMP__ "\n";
 	ailog->info() << AI_NAME << " " << AI_VERSION << std::endl;
 
 
-
 	InitializeUnitDefs();
 
-	statusName = aiexport_getDataDir(true, "status.txt");
+	logname = std::string(datadir) + "/status.txt";
+	statusName = strdup(logname.c_str());
 	map.h = cb->GetMapHeight();
 	map.w = cb->GetMapWidth();
 	map.squareSize = SQUARE_SIZE;
