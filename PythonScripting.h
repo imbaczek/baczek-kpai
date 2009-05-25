@@ -59,6 +59,7 @@ public:
 		try {
 			return Ret(bp::extract<T1>(obj));
 		} catch (bp::error_already_set&) {
+			PyErr_Print();
 		}
 		try {
 			return Ret(bp::extract<T2>(obj));
