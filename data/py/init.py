@@ -81,6 +81,9 @@ def get_wanted_constructors(geospots, width, height):
 def get_build_spot_priority(distance, influence, width, height):
     return int(influence - distance/((width+height)*15))
 
+def get_builder_retreat_timeout(frameNum):
+    return frameNum + 10*GAME_SPEED
+
 def game_frame(teamId, frame):
     import pykpai
     print 'frame:',frame

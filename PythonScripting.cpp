@@ -201,21 +201,21 @@ void PythonScripting::DumpStatus(int framenum, const std::vector<float3>& geos,
 int PythonScripting::GetBuilderRetreatTimeout(int frameNum)
 {
 	PY_FUNC_SKELETON("get_builder_retreat_timeout", frameNum);
-	return extract_default<int>(ret, frameNum+10*GAME_SPEED);
+	return extract_default<int, double, int>(ret, frameNum+10*GAME_SPEED);
 }
 
 
 int PythonScripting::GetWantedConstructors(int geospots, int width, int height)
 {
 	PY_FUNC_SKELETON("get_wanted_constructors", geospots, width, height);
-	return extract_default<int>(ret, 4);
+	return extract_default<int, double, int>(ret, 4);
 }
 
 
 int PythonScripting::GetBuildSpotPriority(float distance, int influence, int width, int height, int def)
 {
 	PY_FUNC_SKELETON("get_build_spot_priority", distance, influence, width, height);
-	return extract_default<int>(ret, def);
+	return extract_default<int, double, int>(ret, def);
 }
 
 ///////////////////////////////////////////////////////////////
