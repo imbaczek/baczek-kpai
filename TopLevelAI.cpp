@@ -955,11 +955,15 @@ void TopLevelAI::DispatchPackets()
 	int chosen = exits[randint(0, exits.size()-1)];
 	float3 pos = random_offset_pos(ai->cb->GetUnitPos(chosen), 64, 512);
 	Command c;
-	c.id = CMD_DISPATCH;
+
+	c.id = CMD_INSERT;
+	c.options = ALT_KEY;
+	c.AddParam(0);
+	c.AddParam(CMD_DISPATCH);
+	c.AddParam(ALT_KEY);
 	c.AddParam(pos.x);
 	c.AddParam(pos.y);
 	c.AddParam(pos.z);
-	c.options = ALT_KEY;
 	ai->cb->GiveOrder(chosen, &c);
 	const UnitDef* ud = ai->cb->GetUnitDef(chosen);
 	ailog->info() << "dispatching packets to " << pos << " from unit " << chosen << " " << ud->name << std::endl;
