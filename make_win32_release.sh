@@ -5,7 +5,7 @@ AISHORTNAME=BaczekKPAI
 AIDLL=output/default/SkirmishAI.dll
 TEMPDIR=output/temp
 SKIRMISHAIDIR=AI/Skirmish
-DEPSDIR=dependencies
+DEPSDIR=dependencies_gcc
 ZIP="7za a -tzip"
 
 if [ ! -f "$AIDLL" ]; then

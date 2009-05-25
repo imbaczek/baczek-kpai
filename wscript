@@ -46,8 +46,8 @@ def configure(conf):
 
     # more compiler flags
     env2 = conf.env.copy()
-    conf.env.append_value('CCFLAGS', '-O2')
-    conf.env.append_value('CXXFLAGS', '-O2')
+    conf.env.append_value('CCFLAGS', ['-O2', '-g'])
+    conf.env.append_value('CXXFLAGS', ['-O2', '-g'])
     conf.set_env_name('debug', env2)
     # debug flags
     conf.setenv('debug')

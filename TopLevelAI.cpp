@@ -457,7 +457,7 @@ void TopLevelAI::FindBattleGroupGoals()
 	int cbgsize = groups[currentBattleGroup].units.size();
 	if (!groups[currentAssignGroup].units.empty()
 			&& cagsize * 0.8 > cbgsize
-			&& random() < 0.5 && lastSwapTime + 180*GAME_SPEED < frameNum
+			&& randfloat() < 0.5 && lastSwapTime + 180*GAME_SPEED < frameNum
 			&& !ImportantTargetInRadius(midpos, 1000)) {
 		ai->SendTextMsg("Battle groups swapped!", 0);
 		SwapBattleGroups();
@@ -473,7 +473,7 @@ void TopLevelAI::FindBattleGroupGoals()
 	if (!groups[currentBattleGroup].units.empty()) {
 		if (!healthDepleted && attackState == AST_GATHER
 				&& ai->python->GetIntValue("attackStateChangeTimeout", lastStateChangeTime + 90*GAME_SPEED) < frameNum
-				&& random() < 0.25) {
+				&& randfloat() < 0.25) {
 			// try to be smart: if health isn't depleted, attack
 			ai->SendTextMsg("set mode to attack (!hd)", 0);
 			SetAttackState(AST_ATTACK);
@@ -482,7 +482,7 @@ void TopLevelAI::FindBattleGroupGoals()
 			SetAttackState(AST_GATHER);
 			ai->SendTextMsg("set mode to gather (hd)", 0);
 		}
-		else if (!ImportantTargetInRadius(midpos, ai->python->GetFloatValue("importantRadius", 1000)) && random() < 0.1) {
+		else if (!ImportantTargetInRadius(midpos, ai->python->GetFloatValue("importantRadius", 1000)) && randfloat() < 0.1) {
 			if (attackState == AST_ATTACK) {
 				
 				// not so smart, toggle state

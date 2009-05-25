@@ -8,8 +8,8 @@
 void init_rng();
 void init_rng(boost::uint32_t seed);
 
-float random();
-float random(float start, float end);
+float randfloat();
+float randfloat(float start, float end);
 
 /// start and end inclusive
 int randint(int start, int end);

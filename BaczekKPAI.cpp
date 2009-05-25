@@ -124,7 +124,7 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 
 	toplevel = new TopLevelAI(this);
 
-	assert(random() != random() || random() != random());
+	assert(randfloat() != randfloat() || randfloat() != randfloat());
 	
 #ifdef USE_STATUS_WINDOW
 	int argc = 1;

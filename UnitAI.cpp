@@ -165,7 +165,7 @@ GoalProcessor::goal_process_t UnitAI::ProcessGoal(Goal* goal)
 				c.AddParam(paramf->y);
 				c.AddParam(paramf->z);
 				// it's good to have some units move up close
-				if (random() < ai->python->GetFloatValue("pr_MOVEOnAttack", 0.1))
+				if (randfloat() < ai->python->GetFloatValue("pr_MOVEOnAttack", 0.1))
 					c.id = CMD_MOVE;
 			} else { // attack unit
 				c.id = CMD_ATTACK;

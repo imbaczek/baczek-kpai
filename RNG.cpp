@@ -31,13 +31,13 @@ void init_rng(boost::uint32_t seed)
 
 
 // thanks http://www.bnikolic.co.uk/blog/cpp-boost-uniform01.html for pitfall warning
-float random()
+float randfloat()
 {
   static boost::uniform_01<boost::mt19937> zeroone(rng);
   return zeroone();
 }
 
-float random(float start, float end)
+float randfloat(float start, float end)
 {
 	boost::uniform_real<float> rnd(start, end);
 	boost::variate_generator<boost::mt19937&, boost::uniform_real<float> >
@@ -55,7 +55,7 @@ int randint(int start, int end)
 
 float3 random_direction()
 {
-	float x = random(0, 2*boost::math::constants::pi<float>());
+	float x = randfloat(0, 2*boost::math::constants::pi<float>());
 	return float3(sin(x), 0, cos(x));
 }
 
@@ -64,7 +64,7 @@ float3 random_offset_pos(const float3& basePos, float minoffset, float maxoffset
 {
 	float3 dest;
 	do {
-		float r = random(minoffset, maxoffset);
+		float r = randfloat(minoffset, maxoffset);
 		float3 modDir = random_direction();
 		dest = basePos + modDir * r;
 	} while (!dest.IsInBounds());
