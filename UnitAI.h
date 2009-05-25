@@ -50,6 +50,7 @@ public:
 	void CheckBuildValid();
 	void CheckSpamTargets();
 	void CheckStandingInBase();
+	bool CheckPosInBase(float3 pos);
 };
 
 bool operator<(const UnitAI& a, const UnitAI& b);

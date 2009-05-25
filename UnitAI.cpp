@@ -465,7 +465,12 @@ void UnitAI::CheckStandingInBase()
 				break;
 			}
 			stuckInBaseCnt = 0;
-			float3 newpos = random_offset_pos(pos, 48, 64);
+			float3 newpos;
+			// don't try to move back into the base
+			do {
+				newpos = random_offset_pos(pos, 48, 72);
+			} while (CheckPosInBase(newpos));
+
 			Command c;
 			c.id = CMD_INSERT;
 			c.options = ALT_KEY;
@@ -479,4 +484,19 @@ void UnitAI::CheckStandingInBase()
 			break;
 		}
 	}
+}
+
+bool UnitAI::CheckPosInBase(float3 pos)
+{
+	int friends[MAX_UNITS];
+	int num;
+
+	num = ai->cb->GetFriendlyUnits(friends, pos, ai->python->GetFloatValue("baseSearchRadius", 16));
+	for (int i = 0; i<num; ++i) {
+		Unit* u = ai->GetUnit(friends[i]);
+		if (u && u->is_base) {
+			return true;
+		}
+	}
+	return false;
 }
