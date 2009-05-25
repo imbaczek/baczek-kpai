@@ -18,7 +18,7 @@ if [ -d "$TEMPDIR" ]; then
 	exit 1
 fi
 
-mkdir -p "$TEMPDIR"
+mkdir -p "$TEMPDIR" || exit 1
 
 # get version
 AIVERSION=$(cat data/AIInfo.lua | grep -- "-- AI version"  \
@@ -30,7 +30,7 @@ echo $AINAME $AIVERSION
 
 DISTDIR="$TEMPDIR/$SKIRMISHAIDIR/$AISHORTNAME/$AIVERSION"
 
-mkdir -p "$DISTDIR/py"
+mkdir -p "$DISTDIR/py" || exit 1
 
 
 # package files
