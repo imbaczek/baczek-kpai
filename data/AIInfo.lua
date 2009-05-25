@@ -25,7 +25,7 @@ local infos = {
 	},
 	{
 		key    = 'name',
-		value  = 'Baczek''s KP AI',
+		value  = 'Baczek\'s KP AI',
 		desc   = 'human readable name.',
 	},
 	{
