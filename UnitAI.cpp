@@ -387,7 +387,7 @@ void UnitAI::CheckBuildValid()
 
 				for (std::vector<int>::iterator it = enemies.begin(); it != enemies.end(); ++it) {
 					ailog->info() << "  enemy at " << ai->cheatcb->GetUnitPos(*it) << std::endl;
-					ai->cb->CreateLineFigure(pos+float3(0, 100, 0), ai->cheatcb->GetUnitPos(*it)+float3(0, 100, 0), 5, 20, 900, 0);
+					ai->CreateLineFigure(pos+float3(0, 100, 0), ai->cheatcb->GetUnitPos(*it)+float3(0, 100, 0), 5, 20, 900, 0);
 				}
 			}
 		}

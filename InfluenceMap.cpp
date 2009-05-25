@@ -147,7 +147,7 @@ void InfluenceMap::FindLocalMinima(float radius, std::vector<int> &values, std::
 				values.push_back(map[x][y]);
 				positions.push_back(pos);
 				rtree.Insert(positions.size()-1, bounds(pos.x, pos.z, 0, 0));
-				ai->cb->CreateLineFigure(pos + float3(0, 100, 0), pos, 5, 5, 30*GAME_SPEED, 0);
+				ai->CreateLineFigure(pos + float3(0, 100, 0), pos, 5, 5, 30*GAME_SPEED, 0);
 			}
 not_found:  ;
 		}

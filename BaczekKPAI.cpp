@@ -46,6 +46,9 @@ BaczekKPAI::BaczekKPAI()
 
 	for (int i = 0; i<MAX_UNITS; ++i)
 		unitTable[i] = 0;
+
+	debugLines = false;
+	debugMsgs = false;
 }
 
 BaczekKPAI::~BaczekKPAI()
@@ -111,6 +114,9 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	PythonScripting::RegisterAI(team, this);
 	python = new PythonScripting(team, datadir);
 
+	debugLines = python->GetIntValue("debugDrawLines", false);
+	debugMsgs = python->GetIntValue("debugMessages", false);
+
 	toplevel = new TopLevelAI(this);
 
 	assert(random() != random() || random() != random());
@@ -133,7 +139,7 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 void BaczekKPAI::UnitCreated(int unit)
 {
 	ailog->info() << "unit created: " << unit << std::endl;
-	cb->SendTextMsg("unit created", 0);
+	SendTextMsg("unit created", 0);
 	myUnits.insert(unit);
 
 	assert(!unitTable[unit]);
@@ -209,12 +215,6 @@ void BaczekKPAI::UnitIdle(int unit)
 	u->last_idle_frame = cb->GetCurrentFrame();
 
 	toplevel->UnitIdle(u);
-
-	const UnitDef* ud=cb->GetUnitDef(unit);
-
-	static char c[200];
-	SNPRINTF(c, 200, "Idle unit %s", ud->humanName.c_str());
-	//cb->SendTextMsg(c, 0);
 }
 
 void BaczekKPAI::GotChatMsg(const char* msg,int player)
@@ -264,6 +264,10 @@ void BaczekKPAI::Update()
 	}
 	influence->Update(friends, allEnemies);
 	python->GameFrame(frame);
+	// enable dynamic switching of debug info
+	debugLines = python->GetIntValue("debugDrawLines", false);
+	debugMsgs = python->GetIntValue("debugMessages", false);
+
 
 	toplevel->Update();
 

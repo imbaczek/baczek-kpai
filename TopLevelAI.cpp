@@ -459,7 +459,7 @@ void TopLevelAI::FindBattleGroupGoals()
 			&& cagsize * 0.8 > cbgsize
 			&& random() < 0.5 && lastSwapTime + 180*GAME_SPEED < frameNum
 			&& !ImportantTargetInRadius(midpos, 1000)) {
-		ai->cb->SendTextMsg("Battle groups swapped!", 0);
+		ai->SendTextMsg("Battle groups swapped!", 0);
 		SwapBattleGroups();
 		swapped = true;
 	}
@@ -475,28 +475,28 @@ void TopLevelAI::FindBattleGroupGoals()
 				&& ai->python->GetIntValue("attackStateChangeTimeout", lastStateChangeTime + 90*GAME_SPEED) < frameNum
 				&& random() < 0.25) {
 			// try to be smart: if health isn't depleted, attack
-			ai->cb->SendTextMsg("set mode to attack (!hd)", 0);
+			ai->SendTextMsg("set mode to attack (!hd)", 0);
 			SetAttackState(AST_ATTACK);
 		} else if (healthDepleted && attackState == AST_ATTACK) {
 			// else, retreat
 			SetAttackState(AST_GATHER);
-			ai->cb->SendTextMsg("set mode to gather (hd)", 0);
+			ai->SendTextMsg("set mode to gather (hd)", 0);
 		}
 		else if (!ImportantTargetInRadius(midpos, ai->python->GetFloatValue("importantRadius", 1000)) && random() < 0.1) {
 			if (attackState == AST_ATTACK) {
 				
 				// not so smart, toggle state
 				SetAttackState(AST_GATHER);
-				ai->cb->SendTextMsg("set mode to gather", 0);
+				ai->SendTextMsg("set mode to gather", 0);
 			}
 			else {
-				ai->cb->SendTextMsg("set mode to attack", 0);
+				ai->SendTextMsg("set mode to attack", 0);
 				SetAttackState(AST_ATTACK);
 			}
 		}
 	} else if (groups[currentBattleGroup].units.empty()) {
 			SetAttackState(AST_GATHER);
-			ai->cb->SendTextMsg("set mode to gather due to empty group", 0);
+			ai->SendTextMsg("set mode to gather due to empty group", 0);
 	}
 
 	FindGoalsGather();
@@ -581,7 +581,7 @@ assign_group_found:;
 	// if no enemies found, stay at base
 	if (found != -1) {
 		groups[currentAssignGroup].rallyPoint = foundSpot;
-		ai->cb->SendTextMsg("GATHER: reacting to enemy near expansion", 0);
+		ai->SendTextMsg("GATHER: reacting to enemy near expansion", 0);
 	}
 	else
 		groups[currentAssignGroup].rallyPoint = gatherSpot;
@@ -606,16 +606,16 @@ assign_group_found:;
 	if (lastRetreatTime + 10*GAME_SPEED < frameNum) {
 		lastRetreatTime = frameNum;
 		RetreatGroup(&groups[currentAssignGroup]);
-		ai->cb->CreateLineFigure(rootSpot+float3(0, 50, 0), groups[currentAssignGroup].rallyPoint+float3(0, 50, 0), 5, 10, 900, 0);
-		ai->cb->SendTextMsg("retreating assign group", 0);
+		ai->CreateLineFigure(rootSpot+float3(0, 50, 0), groups[currentAssignGroup].rallyPoint+float3(0, 50, 0), 5, 10, 900, 0);
+		ai->SendTextMsg("retreating assign group", 0);
 	}
 
 	float3 midpos = groups[currentBattleGroup].GetGroupMidPos();
 	if (attackState == AST_GATHER && lastBattleRetreatTime + 10*GAME_SPEED < frameNum && !ImportantTargetInRadius(midpos, 1000)) {
 		lastBattleRetreatTime = frameNum;
 		groups[currentBattleGroup].AttackMoveToSpot(groups[currentBattleGroup].rallyPoint);
-		ai->cb->CreateLineFigure(rootSpot+float3(0, 50, 0), groups[currentBattleGroup].rallyPoint+float3(0, 50, 0), 5, 10, 900, 0);
-		ai->cb->SendTextMsg("retreating battle group", 0);
+		ai->CreateLineFigure(rootSpot+float3(0, 50, 0), groups[currentBattleGroup].rallyPoint+float3(0, 50, 0), 5, 10, 900, 0);
+		ai->SendTextMsg("retreating battle group", 0);
 	}
 	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
 }
@@ -694,7 +694,7 @@ void TopLevelAI::FindGoalsAttack()
 						g->timeoutFrame = 120*GAME_SPEED;
 						g->params.push_back(*it);
 						groups[currentBattleGroup].AddGoal(g);
-						ai->cb->CreateLineFigure(ai->cheatcb->GetUnitPos(*it)+float3(0, 100, 0),
+						ai->CreateLineFigure(ai->cheatcb->GetUnitPos(*it)+float3(0, 100, 0),
 							positions[minminidx]+float3(0, 100, 0), 5, 5, 600, 0);
 						ailog->info() << "proceeding to attack " << unitdef->name << " at " << ai->cheatcb->GetUnitPos(*it) << std::endl;
 						break;
@@ -704,15 +704,15 @@ void TopLevelAI::FindGoalsAttack()
 			// good target not found, setup formation
 			else if (minminidx != maxminidx) {
 				groups[currentBattleGroup].AttackMoveToSpot(positions[maxminidx]);
-				ai->cb->CreateLineFigure(positions[minminidx]+float3(0, 100, 0), positions[maxminidx], 5, 5, 600, 0);
+				ai->CreateLineFigure(positions[minminidx]+float3(0, 100, 0), positions[maxminidx], 5, 5, 600, 0);
 			}
 			else {
 				groups[currentBattleGroup].AttackMoveToSpot(positions[minminidx]);
-				ai->cb->CreateLineFigure(positions[minminidx]+float3(0, 100, 0), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f), 5, 5, 600, 0);
+				ai->CreateLineFigure(positions[minminidx]+float3(0, 100, 0), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f), 5, 5, 600, 0);
 			}
 		} else {
 			groups[currentBattleGroup].MoveTurnTowards(ai->cb->GetUnitPos(bases->units.begin()->first), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f));
-			ai->cb->CreateLineFigure(ai->cb->GetUnitPos(bases->units.begin()->first)+float3(0, 100, 0), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f), 5, 5, 600, 0);
+			ai->CreateLineFigure(ai->cb->GetUnitPos(bases->units.begin()->first)+float3(0, 100, 0), float3(ai->map.w*0.5f, 0, ai->map.h*0.5f), 5, 5, 600, 0);
 		}
 	}
 	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;

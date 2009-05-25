@@ -100,6 +100,9 @@ public:
 
 	TopLevelAI* toplevel;
 
+	bool debugLines;
+	bool debugMsgs;
+
 #ifdef USE_STATUS_WINDOW
 	MyFrame *frame;
 #endif
@@ -139,6 +142,18 @@ public:
 		const char* side = cb->GetTeamSide(cb->GetMyTeam());
 		std::string configval = (std::string(side)+"_"+role);
 		return python->GetStringValue(configval.c_str(), std::string());
+	}
+
+	void SendTextMsg(const char *msg, int zone)
+	{
+		if (debugMsgs)
+			cb->SendTextMsg(msg, zone);
+	}
+
+	int CreateLineFigure(float3 pos1, float3 pos2, float width, int arrow, int lifeTime, int figureGroupId)
+	{
+		if (debugLines)
+			cb->CreateLineFigure(pos1, pos2, width, arrow, lifeTime, figureGroupId);
 	}
 };
 

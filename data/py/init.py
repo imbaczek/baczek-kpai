@@ -61,6 +61,10 @@ default_config = {
 
         # probabilities
         'pr_MOVEOnAttack': 0.1,
+
+        # debugging
+        'debugDrawLines': 0,
+        'debugMessages': 0,
 }
 
 # put default values into the configuration
