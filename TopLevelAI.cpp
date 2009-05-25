@@ -571,17 +571,20 @@ void TopLevelAI::FindGoalsAssignGroupGather()
 	}
 
 	// not enough units to rush hq, try to move to some enemies nearby
-	const float baseDefenseRadius = ai->python->GetFloatValue("baseDefenseRadius", 1536);
-	numenemies = ai->cheatcb->GetEnemyUnits(enemies, gatherSpot, baseDefenseRadius);
-	// find the closest enemy and sent group there
-	float sqdist = FLT_MAX;
-	for (int i = 0; i<numenemies; ++i) {
-		float3 pos = ai->cheatcb->GetUnitPos(enemies[i]);
-		float tmp = pos.SqDistance2D(gatherSpot);
-		if (tmp < sqdist) {
-			foundSpot = pos;
-			sqdist = tmp;
-			found = enemies[i];
+	// fix "goto crosses initialization" error - add scope
+	{
+		const float baseDefenseRadius = ai->python->GetFloatValue("baseDefenseRadius", 1536);
+		numenemies = ai->cheatcb->GetEnemyUnits(enemies, gatherSpot, baseDefenseRadius);
+		// find the closest enemy and sent group there
+		float sqdist = FLT_MAX;
+		for (int i = 0; i<numenemies; ++i) {
+			float3 pos = ai->cheatcb->GetUnitPos(enemies[i]);
+			float tmp = pos.SqDistance2D(gatherSpot);
+			if (tmp < sqdist) {
+				foundSpot = pos;
+				sqdist = tmp;
+				found = enemies[i];
+			}
 		}
 	}
 
