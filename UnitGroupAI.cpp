@@ -10,7 +10,7 @@
 #include "UnitGroupAI.h"
 #include "Goal.h"
 #include "UnitAI.h"
-#include "Rng.h"
+#include "RNG.h"
 
 
 using boost::shared_ptr;

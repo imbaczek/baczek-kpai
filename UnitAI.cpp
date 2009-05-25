@@ -3,7 +3,7 @@
 #include "Unit.h"
 #include "UnitAI.h"
 #include "Goal.h"
-#include "Rng.h"
+#include "RNG.h"
 
 UnitAI::UnitAI(BaczekKPAI* ai, Unit* owner):
 		owner(owner),
