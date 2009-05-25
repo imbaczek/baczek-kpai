@@ -79,7 +79,7 @@ def get_wanted_constructors(geospots, width, height):
     return max(geospots//4, 1)
 
 def get_build_spot_priority(distance, influence, width, height):
-    return int(influence - distance/((width+height)*15))
+    return int(influence - distance/(width+height)*10)
 
 def get_builder_retreat_timeout(frameNum):
     return frameNum + 10*GAME_SPEED
