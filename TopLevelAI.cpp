@@ -509,6 +509,14 @@ void TopLevelAI::FindGoalsGather()
 {
 	boost::timer t;
 
+	FindGoalsAssignGroupGather();
+	FindGoalsBattleGroupGather();
+
+	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
+}
+
+void TopLevelAI::FindGoalsAssignGroupGather()
+{
 	// initial gather spot: current spot
 	if (groups[currentAssignGroup].units.empty())
 		return;
@@ -520,19 +528,15 @@ void TopLevelAI::FindGoalsGather()
 
 	std::vector<int> values;
 	std::vector<float3> positions;
-	
+
 	// assign group
 	// find enemies near base (or constructors or expansions)
 	int enemies[MAX_UNITS];
 	int numenemies;
 
-	const float baseDefenseRadius = ai->python->GetFloatValue("baseDefenseRadius", 1536);
-	numenemies = ai->cheatcb->GetEnemyUnits(enemies, gatherSpot, baseDefenseRadius);
-	// find the closest and sent group there
-	float sqdist = FLT_MAX;
 	float3 foundSpot;
 	int found = -1;
-	
+
 	int rushBaseUnitCount = ai->python->GetIntValue("rushBaseUnitCount", 250);
 	if (rushBaseUnitCount <= 0)
 		rushBaseUnitCount = 250;
@@ -566,6 +570,11 @@ void TopLevelAI::FindGoalsGather()
 		}
 	}
 
+	// not enough units to rush hq, try to move to some enemies nearby
+	const float baseDefenseRadius = ai->python->GetFloatValue("baseDefenseRadius", 1536);
+	numenemies = ai->cheatcb->GetEnemyUnits(enemies, gatherSpot, baseDefenseRadius);
+	// find the closest enemy and sent group there
+	float sqdist = FLT_MAX;
 	for (int i = 0; i<numenemies; ++i) {
 		float3 pos = ai->cheatcb->GetUnitPos(enemies[i]);
 		float tmp = pos.SqDistance2D(gatherSpot);
@@ -578,7 +587,7 @@ void TopLevelAI::FindGoalsGather()
 
 assign_group_found:;
 
-	// if no enemies found, stay at base
+	// if no enemies found, stay nearby
 	if (found != -1) {
 		groups[currentAssignGroup].rallyPoint = foundSpot;
 		ai->SendTextMsg("GATHER: reacting to enemy near expansion", 0);
@@ -587,6 +596,23 @@ assign_group_found:;
 		groups[currentAssignGroup].rallyPoint = gatherSpot;
 
 
+	// issue retreat goals every 30s or so
+	int frameNum = ai->cb->GetCurrentFrame();
+	if (lastRetreatTime + 10*GAME_SPEED < frameNum) {
+		lastRetreatTime = frameNum;
+		RetreatGroup(&groups[currentAssignGroup]);
+		ai->CreateLineFigure(rootSpot+float3(0, 50, 0), groups[currentAssignGroup].rallyPoint+float3(0, 50, 0), 5, 10, 900, 0);
+		ai->SendTextMsg("retreating assign group", 0);
+	}
+}
+
+
+
+/// find battle group gather spots
+void TopLevelAI::FindGoalsBattleGroupGather()
+{
+	int enemies[MAX_UNITS];
+	int numenemies;
 
 	std::vector<int> candidates;
 	for (std::vector<float3>::iterator it = ai->geovents.begin(); it != ai->geovents.end(); ++it) {
@@ -601,23 +627,15 @@ assign_group_found:;
 		groups[currentBattleGroup].rallyPoint = ai->geovents[candidates[chosen]];
 	}
 
-	// issue retreat goals every 30s or so
 	int frameNum = ai->cb->GetCurrentFrame();
-	if (lastRetreatTime + 10*GAME_SPEED < frameNum) {
-		lastRetreatTime = frameNum;
-		RetreatGroup(&groups[currentAssignGroup]);
-		ai->CreateLineFigure(rootSpot+float3(0, 50, 0), groups[currentAssignGroup].rallyPoint+float3(0, 50, 0), 5, 10, 900, 0);
-		ai->SendTextMsg("retreating assign group", 0);
-	}
-
 	float3 midpos = groups[currentBattleGroup].GetGroupMidPos();
 	if (attackState == AST_GATHER && lastBattleRetreatTime + 10*GAME_SPEED < frameNum && !ImportantTargetInRadius(midpos, 1000)) {
 		lastBattleRetreatTime = frameNum;
 		groups[currentBattleGroup].AttackMoveToSpot(groups[currentBattleGroup].rallyPoint);
-		ai->CreateLineFigure(rootSpot+float3(0, 50, 0), groups[currentBattleGroup].rallyPoint+float3(0, 50, 0), 5, 10, 900, 0);
+		ai->CreateLineFigure(midpos+float3(0, 50, 0), groups[currentBattleGroup].rallyPoint+float3(0, 50, 0), 5, 10, 900, 0);
 		ai->SendTextMsg("retreating battle group", 0);
 	}
-	ailog->info() << __FUNCTION__ << " took " << t.elapsed() << std::endl;
+
 }
 
 

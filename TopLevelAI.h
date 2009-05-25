@@ -59,6 +59,9 @@ public:
 
 	void FindBattleGroupGoals();
 	void FindGoalsGather();
+	void FindGoalsAssignGroupGather();
+	void FindGoalsBattleGroupGather();
+
 	void FindGoalsAttack();
 	void FindPointerTargets();
 
