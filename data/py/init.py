@@ -1,8 +1,14 @@
 import pykpai
-import threading
 import sys
 
 from pykpai import GAME_SPEED, MAX_UNITS, SQUARE_SIZE
+
+# report what's in sys.path
+print 'sys.path:'
+for p in sys.path:
+    print p
+
+# further imports should go here
 
 config = {
 }

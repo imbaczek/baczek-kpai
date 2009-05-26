@@ -159,6 +159,8 @@ PythonScripting::PythonScripting(int teamId, std::string datadir)
 	object file_err = file_func(str(datadir+"/pyerr.txt"), "w");
 	sys.attr("stderr") = file_err;
 
+	sys.attr("path") = boost::python::list();
+	sys.attr("path").attr("append")(datadir+"/py/library.zip");
 	sys.attr("path").attr("append")(datadir+"/py");
 	try {
 		init = import("init");
