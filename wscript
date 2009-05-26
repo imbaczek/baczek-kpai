@@ -11,6 +11,8 @@ blddir = 'output'
 def set_options(opt):
     opt.add_option('--spring-dir', default='../../../',
             help='Spring RTS checkout directory')
+    opt.add_option('--variant', default='default',
+            help="variant to build: default, debug")
 
     opt.tool_options('boost')
     opt.tool_options('python')
@@ -43,19 +45,25 @@ def configure(conf):
     # global conf options
     from Options import options
     conf.env['spring_dir'] = os.path.abspath(options.spring_dir)
+    if options.variant not in ('default', 'debug'):
+        raise ValueError, 'invalid variant '+options.variant
+    conf.env['variant'] = options.variant
 
-    # more compiler flags
+    # variants
     env2 = conf.env.copy()
+    conf.set_env_name('debug', env2)
+    env2.set_variant('debug')
+    # more compiler flags
     conf.env.append_value('CCFLAGS', ['-O2', '-g'])
     conf.env.append_value('CXXFLAGS', ['-O2', '-g'])
-    conf.set_env_name('debug', env2)
     # debug flags
     conf.setenv('debug')
-    conf.env.append_value('CCFLAGS', '-g')
-    conf.env.append_value('CXXFLAGS', '-g')
+    conf.env['CCFLAGS'] = '-g'
+    conf.env['CXXFLAGS'] = '-g'
     
 
 def build(bld):
+    print '** Building variant', bld.env['variant']
     import glob, os.path
     def get_spring_files():
         springdir = bld.env['spring_dir']
@@ -113,4 +121,7 @@ def build(bld):
             rule="strip ${SRC[0].abspath(env)}",
             always=True,
         )
-
+    
+    # build only one variant
+    for x in bld.all_task_gen:
+        x.env['_VARIANT_'] = bld.env['variant']
