@@ -51,6 +51,7 @@ const char BaczekKPAI::AI_VERSION[] = "1.1";
 
 BaczekKPAI::BaczekKPAI()
 {
+	statusName = 0;
 	influence = 0;
 	python = 0;
 	toplevel = 0;
@@ -72,6 +73,8 @@ BaczekKPAI::~BaczekKPAI()
 
 	delete python; python = 0;
 	delete influence; influence = 0;
+
+	free((void*)statusName); statusName = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -95,12 +98,12 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	cb->SendTextMsg("AI data directory:", 0);
 	cb->SendTextMsg(datadir, 0);
 
-	std::stringstream ss;
 
 	if (!ailog) {
 		ailog.reset(new Log(callback));
 
-		ss << dd << "/log" << team << ".txt";
+		std::stringstream ss;
+		ss << dd << "/log.txt";
 
 		std::string logname = ss.str();
 		ailog->open(logname.c_str());
@@ -113,7 +116,8 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 
 	InitializeUnitDefs();
 
-	ss << dd << "/status" << team << ".txt";
+	std::stringstream ss;
+	ss << dd << "status" << team << ".txt";
 	std::string logname = ss.str();
 	statusName = strdup(logname.c_str());
 	map.h = cb->GetMapHeight();
@@ -328,6 +332,7 @@ void BaczekKPAI::DumpStatus()
 {
 	std::string tmpName = std::string(statusName)+".tmp";
 	ofstream statusFile(tmpName.c_str());
+
 	// dump map size, frame number, etc
 	int frame = cb->GetCurrentFrame();
 	statusFile << "frame " << frame << "\n"
