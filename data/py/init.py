@@ -8,6 +8,13 @@ print 'sys.path:'
 for p in sys.path:
     print p
 
+try:
+    import bz2
+    print 'bz2 module location:', bz2.__file__
+except ImportError, e:
+    print 'WARNING: bz2 import failed'
+    print e
+
 # further imports should go here
 
 config = {

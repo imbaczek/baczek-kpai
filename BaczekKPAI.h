@@ -11,6 +11,7 @@
 #include <set>
 #include <vector>
 
+
 #include "ExternalAI/IGlobalAI.h"
 #include "ExternalAI/IAICallback.h"
 #include "ExternalAI/IAICheats.h"
@@ -22,9 +23,6 @@
 #include "TopLevelAI.h"
 
 
-const char AI_NAME[] = "Baczek's KP AI";
-const char AI_VERSION[] = "1.0";
-
 using namespace std;
 
 class Log;
@@ -33,6 +31,9 @@ class Unit;
 class BaczekKPAI : public IGlobalAI  
 {
 public:
+	static const char AI_NAME[];
+	static const char AI_VERSION[];
+
 	BaczekKPAI();
 	virtual ~BaczekKPAI();
 
@@ -154,7 +155,8 @@ public:
 	int CreateLineFigure(float3 pos1, float3 pos2, float width, int arrow, int lifeTime, int figureGroupId)
 	{
 		if (debugLines)
-			cb->CreateLineFigure(pos1, pos2, width, arrow, lifeTime, figureGroupId);
+			return cb->CreateLineFigure(pos1, pos2, width, arrow, lifeTime, figureGroupId);
+		else return 0;
 	}
 };
 

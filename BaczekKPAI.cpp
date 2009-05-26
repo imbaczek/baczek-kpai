@@ -7,9 +7,11 @@
 #include <stdlib.h>
 #include <cassert>
 #include <iterator>
+#include <sstream>
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/timer.hpp>
+#include <boost/shared_ptr.hpp>
 
 // AI interface/Spring includes
 #include "AIExport.h"
@@ -32,14 +34,23 @@
 
 namespace fs = boost::filesystem;
 
+
+////////////////////////////////////////////////////////////////////////////////
+// Version, globals and static members
+////////////////////////////////////////////////////////////////////////////////
+
+boost::shared_ptr<Log> ailog;
+
+const char BaczekKPAI::AI_NAME[] = "Baczek's KP AI";
+const char BaczekKPAI::AI_VERSION[] = "1.1";
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 ////////////////////////////////////////////////////////////////////////////////
 
-
 BaczekKPAI::BaczekKPAI()
 {
-	ailog = 0;
 	influence = 0;
 	python = 0;
 	toplevel = 0;
@@ -61,16 +72,11 @@ BaczekKPAI::~BaczekKPAI()
 
 	delete python; python = 0;
 	delete influence; influence = 0;
-
-	// global ailog deleted last
-	delete ailog; ailog = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // AI Event functions
 ////////////////////////////////////////////////////////////////////////////////
-
-Log* ailog = 0;
 
 void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 {
@@ -89,18 +95,26 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 	cb->SendTextMsg("AI data directory:", 0);
 	cb->SendTextMsg(datadir, 0);
 
-	ailog = new Log(callback);
-	
-	std::string logname = dd + "/log.txt";
-	ailog->open(logname.c_str());
-	ailog->info() << "Logging initialized.\n";
-	ailog->info() << "Baczek KP AI compiled on " __TIMESTAMP__ "\n";
-	ailog->info() << AI_NAME << " " << AI_VERSION << std::endl;
+	std::stringstream ss;
+
+	if (!ailog) {
+		ailog.reset(new Log(callback));
+
+		ss << dd << "/log" << team << ".txt";
+
+		std::string logname = ss.str();
+		ailog->open(logname.c_str());
+		ailog->info() << "Logging initialized.\n";
+		ailog->info() << "Baczek KP AI compiled on " __TIMESTAMP__ "\n";
+		ailog->info() << AI_NAME << " " << AI_VERSION << std::endl;
+		ss.clear();
+	}
 
 
 	InitializeUnitDefs();
 
-	logname = dd + "/status.txt";
+	ss << dd << "/status" << team << ".txt";
+	std::string logname = ss.str();
 	statusName = strdup(logname.c_str());
 	map.h = cb->GetMapHeight();
 	map.w = cb->GetMapWidth();

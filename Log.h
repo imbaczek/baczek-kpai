@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fstream>
+#include <boost/shared_ptr.hpp>
 
 #ifdef _MSC_VER
 #pragma warning (disable: 4996) // secure iterators
@@ -36,4 +37,4 @@ public:
 	std::ofstream& info() { flush(); logfile << "INFO:"; return logfile; }
 };
 
-extern Log* ailog;
+extern boost::shared_ptr<Log> ailog;
