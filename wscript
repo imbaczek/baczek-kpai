@@ -32,6 +32,7 @@ def configure(conf):
            static='both',
            score_version=(-1000, 1000),
            tag_minscore=1000,
+           min_version='1.37.0',
            mandatory=True)
     
     #conf.find_gxx()
