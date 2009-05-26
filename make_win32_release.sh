@@ -6,7 +6,7 @@ TEMPDIR=output/temp
 SKIRMISHAIDIR=AI/Skirmish
 DISTDIR="dist"
 DEPSDIRS="deps/common" 
-PYLIB="deps/python/library.zip"
+PYLIBDIR="deps/python"
 ZIP="7za a -tzip"
 ZIP7="7za a"
 
@@ -70,7 +70,9 @@ mkdir -p "$ZIPDIR/py" || exit 1
 cp -p "$AIDLL" "$ZIPDIR"
 cp -p data/*.lua "$ZIPDIR"
 cp -p data/py/*.py "$ZIPDIR/py"
-cp -p "$PYLIB" "$ZIPDIR/py"
+
+# package python stdlib
+cp -p "$PYLIBDIR"/* "$ZIPDIR/py"
 
 # docs
 cp -p README_BaczekKPAI.txt "$TEMPDIR"
