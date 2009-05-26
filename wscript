@@ -78,8 +78,9 @@ def build(bld):
                 always=True,
                 on_results=True,
         )
-
+    
     skirmishai = bld.new_task_gen(
+            name="SkirmishAI",
             features='cxx cc cshlib',
             includes=['.'] + [os.path.join(bld.env['spring_dir'], x)
                 for x in ('rts', 'rts/System', 'AI/Wrappers',
@@ -96,3 +97,20 @@ def build(bld):
             defines='BUILDING_SKIRMISH_AI BUILDING_AI',
             target='SkirmishAI',
     )
+
+    # strip but keep debug info
+    debug_info = bld.new_task_gen(
+            name="save_debug",
+            after="cc cxx cxx_link",
+            source=bld.env['shlib_PATTERN']%"SkirmishAI",
+            target="SkirmishAI.dbg",
+            rule="strip --only-keep-debug -o ${TGT[0].abspath(env)} ${SRC[0].abspath(env)}",
+        )
+    strip = bld.new_task_gen(
+            name="strip",
+            after="save_debug",
+            source=bld.env['shlib_PATTERN']%"SkirmishAI",
+            rule="strip ${SRC[0].abspath(env)}",
+            always=True,
+        )
+

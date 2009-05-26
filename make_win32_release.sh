@@ -4,18 +4,22 @@ AINAME="Baczek's KP AI"
 AISHORTNAME=BaczekKPAI
 TEMPDIR=output/temp
 SKIRMISHAIDIR=AI/Skirmish
+DISTDIR="dist"
 DEPSDIRS="deps/common" 
 PYLIB="deps/python/library.zip"
 ZIP="7za a -tzip"
+ZIP7="7za a"
 
 case $1 in
 	gcc)
 		AIDLL=output/default/SkirmishAI.dll
+		AIDBG=output/default/SkirmishAI.dbg
 		DEPSDIRS="$DEPSDIRS deps/gcc"
 		KIND=gcc
 		;;
 	msvc)
 		AIDLL=SkirmishAI.dll
+		AIDBG=SkirmishAI.pdb
 		DEPSDIRS="$DEPSDIRS deps/msvc"
 		KIND=msvc
 		;;
@@ -44,18 +48,29 @@ GITVERSION=$(git rev-parse HEAD | sed 's/\(.......\).*/\1/')
 
 echo $AINAME $AIVERSION $GITVERSION
 
+
+# zip debug info
+if [ -f "$AIDBG" ]; then
+	DEBUGARCHIVE="debug/$KIND/$AIVERSION-$GITVERSION.7z"
+	mkdir -p "debug/$KIND" || exit 1
+	echo "zipping debug info: $DEBUGARCHIVE"
+	$ZIP7 "$DEBUGARCHIVE" "$AIDBG" >/dev/null
+fi
+
 # create directory structure
+ZIPDIR="$TEMPDIR/$SKIRMISHAIDIR/$AISHORTNAME/$AIVERSION"
+ARCHIVENAME="$AISHORTNAME-$AIVERSION-$KIND-$GITVERSION.zip"
 
-DISTDIR="$TEMPDIR/$SKIRMISHAIDIR/$AISHORTNAME/$AIVERSION"
+echo "creating release zip: $ARCHIVENAME"
 
-mkdir -p "$DISTDIR/py" || exit 1
+mkdir -p "$ZIPDIR/py" || exit 1
 
 
 # package files
-cp -p "$AIDLL" "$DISTDIR"
-cp -p data/*.lua "$DISTDIR"
-cp -p data/py/*.py "$DISTDIR/py"
-cp -p "$PYLIB" "$DISTDIR/py"
+cp -p "$AIDLL" "$ZIPDIR"
+cp -p data/*.lua "$ZIPDIR"
+cp -p data/py/*.py "$ZIPDIR/py"
+cp -p "$PYLIB" "$ZIPDIR/py"
 
 # docs
 cp -p README_BaczekKPAI.txt "$TEMPDIR"
@@ -66,8 +81,13 @@ for dep in $DEPSDIRS; do
 done
 
 DIR=`pwd`
-ARCHIVENAME="$DIR/$AISHORTNAME-$AIVERSION-$KIND-$GITVERSION.zip"
+ABSARCHIVENAME="$DIR/$ARCHIVENAME"
 
-(cd "$TEMPDIR" && $ZIP "$ARCHIVENAME" *)
+(cd "$TEMPDIR" && $ZIP "$ABSARCHIVENAME" *) >/dev/null
 
 rm -rf "$TEMPDIR"
+
+mkdir -p "$DISTDIR" || exit 1
+mv "$ABSARCHIVENAME" "$DISTDIR"
+
+echo "archive moved to $DISTDIR"

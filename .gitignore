@@ -2,6 +2,7 @@ Debug/
 Release/
 _UpgradeReport_Files/
 deps/
+dist/
 UpgradeReport*
 UpgradeLog*
 *.ncb
