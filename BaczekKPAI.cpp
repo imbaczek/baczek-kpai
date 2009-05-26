@@ -161,14 +161,16 @@ void BaczekKPAI::InitAI(IGlobalAICallback* callback, int team)
 #endif
 }
 
-void BaczekKPAI::UnitCreated(int unit)
+void BaczekKPAI::UnitCreated(int unit, int builder)
 {
-	ailog->info() << "unit created: " << unit << std::endl;
+	ailog->info() << "unit created: " << unit << " by " << builder << std::endl;
 	SendTextMsg("unit created", 0);
 	myUnits.insert(unit);
 
 	assert(!unitTable[unit]);
 	unitTable[unit] = new Unit(this, unit);
+
+	// TODO chain builder and goal
 
 	if (unitTable[unit]->is_expansion)
 		toplevel->HandleExpansionCommands(unitTable[unit]);
