@@ -42,7 +42,7 @@ namespace fs = boost::filesystem;
 boost::shared_ptr<Log> ailog;
 
 const char BaczekKPAI::AI_NAME[] = "Baczek's KP AI";
-const char BaczekKPAI::AI_VERSION[] = "1.1";
+const char BaczekKPAI::AI_VERSION[] = "1.2";
 
 
 ////////////////////////////////////////////////////////////////////////////////

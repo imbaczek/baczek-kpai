@@ -21,7 +21,7 @@ local infos = {
 	},
 	{
 		key    = 'version',
-		value  = '1.1', -- AI version - !This comment is used for parsing!
+		value  = '1.2', -- AI version - !This comment is used for parsing!
 	},
 	{
 		key    = 'name',
@@ -30,12 +30,12 @@ local infos = {
 	},
 	{
 		key    = 'description',
-		value  = 'This AI does absolutely nothing.',
+		value  = 'AI for Kernel Panic. Plays System well, Hacker so-so, Network rather bad.',
 		desc   = 'tooltip.',
 	},
 	{
 		key    = 'url',
-		value  = 'http://spring.clan-sy.com/wiki/AI:TestSkirmishAI',
+		value  = 'http://spring.clan-sy.com/wiki/AI:BaczekKPAI',
 		desc   = 'URL with more detailed info about the AI',
 	},
 	{
