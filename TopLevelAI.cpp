@@ -540,7 +540,8 @@ void TopLevelAI::FindGoalsAssignGroupGather()
 	int rushBaseUnitCount = ai->python->GetIntValue("rushBaseUnitCount", 250);
 	if (rushBaseUnitCount <= 0)
 		rushBaseUnitCount = 250;
-	if (groups[currentAssignGroup].units.size() >= (size_t)rushBaseUnitCount) {
+	if (groups[currentAssignGroup].units.size() >= (size_t)rushBaseUnitCount
+			|| ai->allEnemies.size() < 0.25*ai->friends.size()) {
 		// rush enemy hq
 		for (std::set<int>::iterator it = ai->enemyBases.begin(); it != ai->enemyBases.end(); ++it) {
 			const UnitDef* ud = ai->cheatcb->GetUnitDef(*it);
@@ -699,9 +700,19 @@ void TopLevelAI::FindGoalsAttack()
 			minminidx = it - values.begin();
 		}
 	}
-
+	
 	if (!groups.empty()) {
-		if (minminidx != -1) {
+		if (ai->allEnemies.size() < 0.5*ai->friends.size()) {
+			for (std::vector<int>::iterator it = ai->allEnemies.begin(); it != ai->allEnemies.end(); ++it) {
+				const UnitDef* unitdef = ai->cheatcb->GetUnitDef(*it);
+				if (unitdef && (Unit::IsBase(unitdef) || Unit::IsExpansion(unitdef) || Unit::IsSuperWeapon(unitdef))) {
+					groups[currentBattleGroup].AttackMoveToSpot(ai->cheatcb->GetUnitPos(*it));
+					ailog->info() << "overwhelming attack " << unitdef->name << " at " << ai->cheatcb->GetUnitPos(*it) << std::endl;
+					break;
+				}
+			}
+		}
+		else if (minminidx != -1) {
 			// check if there's a minifac or expansion near the spot
 			// if there is, attack there
 			std::vector<int> enemies;

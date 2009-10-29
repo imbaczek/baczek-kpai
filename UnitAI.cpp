@@ -194,6 +194,18 @@ void UnitAI::Update()
 	int phase = frameNum % GAME_SPEED;
 
 	if (phase == (owner ? owner->id%GAME_SPEED : 0)) {
+		if (owner) {
+			const UnitDef* ud = ai->cb->GetUnitDef(owner->id);
+			if (ud && ud->name == "worm") {
+				// set firestate to fire at will till a better solution is available
+				Command c;
+				c.id = CMD_FIRE_STATE;
+				c.AddParam(2);
+				ai->cb->GiveOrder(owner->id, &c);
+			}
+		}
+
+
 		std::sort(goals.begin(), goals.end(), goal_priority_less());
 		//DumpGoalStack("Unit");
 		CheckContinueGoal();

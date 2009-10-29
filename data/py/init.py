@@ -100,7 +100,6 @@ def get_builder_retreat_timeout(frameNum):
 def game_frame(teamId, frame):
     import pykpai
     print 'frame:',frame
-    #pykpai.SendTextMessage(teamId, "OH HAI in frame %s"%frame)
 
 
 def dump_status(teamId, frame, geos, friends, foes):
